@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月09日 星期一 22时16分46秒
+# Last Modified : 2018年04月10日 星期二 02时09分03秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -121,13 +121,35 @@ class NN_pw_zimc(torch.nn.Module):
 
 
 class NN_qz_w(torch.nn.Module):
-    def __init__(self, n_z, dim_w, n_k):
+    def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k):
         super(NN_qz_w, self).__init__()
-        self.n_k = n_k
-        self.dim_w = dim_w
+        self.sz_image = sz_image
+        self.ch = ch_image
+        self.tasks = tasks
         self.n_z = n_z
+        self.dim_w = dim_w
+        self.n_k = n_k
 
-        self.fc1 = torch.nn.Linear(self.dim_w * self.n_k, 64)
+        # for image input
+        self.conv1 = torch.nn.Conv2d(self.ch, 16, kernel_size=3, padding=1)
+        self.pool1 = torch.nn.MaxPool2d(3)
+        self.conv2 = torch.nn.Conv2d(16, 32, kernel_size=3, padding=1)
+        self.pool2 = torch.nn.MaxPool2d(2)
+        self.conv3 = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
+        self.pool3 = torch.nn.MaxPool2d(2)
+        self.fc_img1 = torch.nn.Linear(
+            32 * (sz_image[0] // 3 // 2 // 2) * (sz_image[1] // 3 // 2 // 2), 64)
+
+        # for c input
+        self.fc_c1 = torch.nn.Linear(self.tasks, 64)
+        self.fc_c2 = torch.nn.Linear(64, 64)
+
+        # for w input
+        self.fc_w1 = torch.nn.Linear(self.dim_w * self.n_k, 64)
+        self.fc_w2 = torch.nn.Linear(64, 64)
+
+        # merge
+        self.fc1 = torch.nn.Linear(3 * 64, 64)
         self.fc2 = torch.nn.Linear(64, 64)
         self.mean = torch.nn.Linear(64, self.n_z)
         self.logvar = torch.nn.Linear(64, self.n_z)
@@ -135,20 +157,39 @@ class NN_qz_w(torch.nn.Module):
         self.relu = torch.nn.ReLU()
         self.sigmoid = torch.nn.Sigmoid()
 
-    # input w(n_batch, k_w, dim_w);
+    # input w(n_batch, k_w, dim_w), im(n_batch, ch, h, w), c(n_batch, tasks);
     # output mean(n_batch, n_z), logvar(n_batch, n_z)
-    def forward(self, w):
+    def forward(self, w, im, c):
         n_batch = w.size(0)
-        x = self.relu(self.fc1(w.view(n_batch, -1)))
+
+        # image
+        im_x = self.relu(self.conv1(im))
+        im_x = self.pool1(im_x)
+        im_x = self.relu(self.conv2(im_x))
+        im_x = self.pool2(im_x)
+        im_x = self.relu(self.conv3(im_x))
+        im_x = self.pool3(im_x).view(n_batch, -1)
+        im_x = self.fc_img1(im_x)
+
+        # tasks
+        c_x = self.relu(self.fc_c1(c))
+        c_x = self.fc_c2(c_x)
+
+        # w
+        w_x = self.relu(self.fc_w1(w.view(n_batch, -1)))
+        w_x = self.relu(self.fc_w2(w_x))
+
+        # merge
+        x = self.relu(self.fc1(torch.cat((im_x, c_x, w_x), 1)))
         x = self.relu(self.fc2(x))
         mean = self.mean(x)
         logvar = self.logvar(x)
         return mean, logvar
 
-    # if samples is None, then return shape (n_batch, n_k, dim_w)
-    # else return shape (n_samples, n_batch, n_k, dim_w)
-    def sample(self, w, samples=None, reparameterization=False):
-        mean, logvar = self.forward(w)
+    # if samples is None, then return shape (n_batch, n_z)
+    # else return shape (n_samples, n_batch, n_z)
+    def sample(self, w, im, c, samples=None, reparameterization=False):
+        mean, logvar = self.forward(w, im, c)
         if reparameterization:
             dist = torch.distributions.Normal(
                 torch.zeros_like(mean), torch.ones_like(logvar))
@@ -168,7 +209,7 @@ class NN_qz_w(torch.nn.Module):
                 return sample
 
     # return (n_batch,)
-    def Dkl(self, w):
+    def Dkl(self, w, im, c):
         def norm_Dkl(mean1, logvar1, mean2, logvar2):
             # p(x)~N(u1, v1), q(x)~N(u2, v2)
             # Dkl(p||q) = 0.5 * (log(|v2|/|v1|) - d + tr(v2^-1 * v1) + (u1 - u2)' * v2^-1 * (u1 - u2))
@@ -176,7 +217,7 @@ class NN_qz_w(torch.nn.Module):
             return 0.5 * ((logvar2 - logvar1 + torch.exp(logvar1 - logvar2) + (mean1 - mean2)**2.) / torch.exp(logvar2) - 1)\
                 .sum(-1).sum(-1)
 
-        mean, logvar = self.forward(w)
+        mean, logvar = self.forward(w, im, c)
         if next(self.fc1.parameters()).is_cuda:
             mean_t, logvar_t = torch.zeros_like(mean).cuda(
             ).detach(), torch.zeros_like(logvar).cuda().detach()

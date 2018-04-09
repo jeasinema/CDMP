@@ -15,6 +15,9 @@ class CMP(object):
     def __init__(self, config):
         self.cfg = config
         self.encoder = NN_qz_w(n_z=self.cfg.number_of_hidden,
+                               ch_image=self.cfg.image_channels,
+                               sz_image=self.cfg.image_size,
+                               tasks=self.cfg.number_of_tasks,
                                dim_w=self.cfg.trajectory_dimension,
                                n_k=self.cfg.number_of_MP_kernels)
         self.decoder = NN_pw_zimc(sz_image=self.cfg.image_size,
@@ -64,9 +67,9 @@ class CMP(object):
                 w, c, im = batchToVariable(batch)
                 optim.zero_grad()
                 z = self.encoder.sample(
-                    w, samples=self.cfg.number_of_oversample, reparameterization=True)
+                    w, im, c, samples=self.cfg.number_of_oversample, reparameterization=True)
                 de = self.decoder.mse_error(w, z, im, c).sum()
-                ee = self.encoder.Dkl(w).sum()
+                ee = self.encoder.Dkl(w, im, c).sum()
                 l = de + ee
                 l.backward()
                 optim.step()
