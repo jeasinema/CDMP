@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月09日 星期一 22时09分30秒
+# Last Modified : 2018年04月09日 星期一 22时20分06秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -39,8 +39,8 @@ class Config(object):
         # program properties
         self.use_gpu = True
         self.multi_threads = 4
-        self.log_path = "./logs"
-        self.check_point_path = "./logs/checkpoints"
+        self.log_path = "./assets/log"
+        self.check_point_path = "./assets/learned_model"
         self.experiment_name = "Four_Point_Reacher"
 
 
