@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月09日 星期一 22时14分27秒
+# Last Modified : 2018年04月10日 星期二 02时42分55秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -72,6 +72,7 @@ class Env(object):
                 tau = tau[0]
                 c = c[0]
 
+            fig = plt.figure()
             plt.imshow(im)
             plt.plot(*self.__remap_data_to_image(tau[:, 0], tau[:, 1]))
             plt.xticks([])
@@ -129,7 +130,9 @@ class Env(object):
             plt.pause(0.01)
         else:
             plt.show()
-
+        img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+        img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+        return img
 
 if __name__ == '__main__':
     pass

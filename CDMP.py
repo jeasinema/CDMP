@@ -9,7 +9,10 @@ from config import Config
 from utils import bar
 from rbf import RBF
 from model import *
+from tensorboard_logging import Logger
 
+cfg = Config()
+logger = Logger(os.path.join(cfg.log_path, cfg.experiment_name))
 
 class CMP(object):
     def __init__(self, config):
@@ -63,18 +66,22 @@ class CMP(object):
         loss = []
         for epoch in range(self.cfg.epochs):
             avg_loss = []
+            avg_loss_de = []
+            avg_loss_ee = []
             for i, batch in enumerate(self.cfg.generator_train(self.cfg)):
                 w, c, im = batchToVariable(batch)
                 optim.zero_grad()
                 z = self.encoder.sample(
                     w, im, c, samples=self.cfg.number_of_oversample, reparameterization=True)
-                de = self.decoder.mse_error(w, z, im, c).sum()
-                ee = self.encoder.Dkl(w, im, c).sum()
+                de = self.decoder.mse_error(w, z, im, c).mean()
+                ee = self.encoder.Dkl(w, im, c).mean()
                 l = de + ee
                 l.backward()
                 optim.step()
 
                 avg_loss.append(l.data[0])
+                avg_loss_de.append(de.data[0])
+                avg_loss_ee.append(ee.data[0])
 
                 bar(i + 1, self.cfg.batches_train, "Epoch %d/%d: " % (epoch + 1, self.cfg.epochs),
                     " | D-Err=%f; E-Err=%f" % (de.data[0], ee.data[0]), end_string='')
@@ -83,6 +90,9 @@ class CMP(object):
                 if i + 1 >= self.cfg.batches_train:
                     loss.append(sum(avg_loss) / len(avg_loss))
                     print("Epoch=%d, Average Loss=%f" % (epoch + 1, loss[-1]))
+                    logger.log_scalar('loss', sum(avg_loss)/len(avg_loss), epoch)
+                    logger.log_scalar('loss_de', sum(avg_loss_de)/len(avg_loss_de), epoch)
+                    logger.log_scalar('loss_ee', sum(avg_loss_ee)/len(avg_loss_ee), epoch)
                     break
             if (epoch % self.cfg.save_interval == 0 and epoch != 0) or\
                     (self.cfg.save_interval <= 0 and loss[-1] == min(loss)):
@@ -99,7 +109,8 @@ class CMP(object):
                 torch.save(net_param, check_point_file)
                 print("Check point saved @ %s" % check_point_file)
             if epoch != 0 and epoch % self.cfg.display_interval == 0:
-                self.test()
+                img = self.test()
+                logger.log_images('test_img', img, epoch)
 
     # generator: (task_id, img) x n_batch
     def test(self):
@@ -129,11 +140,11 @@ class CMP(object):
                 for wo in self.decoder.sample(z, im, c).cpu().data.numpy())
         tau, cls, imo = tuple(zip(*batch))
         env = self.cfg.env(self.cfg)
-        env.display(tauo, imo, cls, interactive=True)
+        img = env.display(tauo, imo, cls, interactive=True)
+        return img 
 
 
 def main():
-    cfg = Config()
     alg = CMP(config=cfg)
     alg.train()
     alg.test()
