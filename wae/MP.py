@@ -24,7 +24,8 @@ class RBF(object):
         n_t = traj.shape[1]
         t = np.linspace(0, 1, n_t, dtype=np.float32)
         # wc:N x K; w:K x D;
-        wc = self.kernel_func(np.tile(t[:, np.newaxis], (1, self.K)), np.tile(self.center, (n_t, 1)))
+        wc = self.kernel_func(
+            np.tile(t[:, np.newaxis], (1, self.K)), np.tile(self.center, (n_t, 1)))
         wc /= wc.sum(1, keepdims=True)
         w = []
         self.weight *= 0
@@ -40,7 +41,8 @@ class RBF(object):
 
     def generate(self, nt=100, fix=False):
         t = np.linspace(0, 1, nt, dtype=np.float32)
-        wc = self.kernel_func(np.tile(t[:, np.newaxis], (1, self.K)), np.tile(self.center, (nt, 1)))
+        wc = self.kernel_func(
+            np.tile(t[:, np.newaxis], (1, self.K)), np.tile(self.center, (nt, 1)))
         wc /= wc.sum(1, keepdims=True)
 
         if fix:
@@ -78,14 +80,15 @@ def main():
 
 if __name__ == "__main__":
     t = np.linspace(0, 1, 50, dtype=np.float32)
-    tau1 = np.vstack([-.25*t, (1*t)**.25]).T
-    tau2 = np.vstack([-0.1*t, (1*t)**.25]).T
-    tau3 = np.vstack([0.1*t, (1*t)**.25]).T
-    tau4 = np.vstack([.25*t, (1*t)**.25]).T
+    tau1 = np.vstack([-.25 * t, (1 * t)**.25]).T
+    tau2 = np.vstack([-0.1 * t, (1 * t)**.25]).T
+    tau3 = np.vstack([0.1 * t, (1 * t)**.25]).T
+    tau4 = np.vstack([.25 * t, (1 * t)**.25]).T
     tau = np.vstack([np.tile(tau1, (100, 1, 1)), np.tile(tau2, (100, 1, 1)),
                      np.tile(tau3, (100, 1, 1)), np.tile(tau4, (100, 1, 1))])
 
-    tau += np.random.normal(0., 0.1, tau.shape) * np.sin(t*np.pi).reshape(1, 50, 1)
+    tau += np.random.normal(0., 0.1, tau.shape) * \
+        np.sin(t * np.pi).reshape(1, 50, 1)
 
     rbf = RBF(2)
     rbf.train(tau)
