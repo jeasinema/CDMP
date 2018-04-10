@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月09日 星期一 22时20分06秒
+# Last Modified : 2018年04月10日 星期二 14时30分51秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -29,13 +29,13 @@ class Config(object):
         self.generator_test = batch_test    # function pointer
         self.env = Env                      # class pointer
         # training properties
-        self.batch_size_train = 20          # n_batch
+        self.batch_size_train = 100          # n_batch
         self.batch_size_test = 6
         self.batches_train = 100
         self.epochs = 100
         self.continue_training = True
         self.save_interval = 10             # -1 for saving best model
-        self.display_interval = 5
+        self.display_interval = 1
         # program properties
         self.use_gpu = True
         self.multi_threads = 4

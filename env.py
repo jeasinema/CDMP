@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月09日 星期一 22时14分27秒
+# Last Modified : 2018年04月10日 星期二 14时29分38秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -43,7 +43,7 @@ class Env(object):
             task_id = np.random.randint(0, self.cfg.number_of_tasks)
         if im_id is None:
             im_id = list(range(4))
-            np.random.shuffle(im_id)
+            # np.random.shuffle(im_id)
         traj_id = 0
         for i in range(self.cfg.number_of_tasks):
             if task_id == im_id[i]:

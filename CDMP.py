@@ -65,8 +65,8 @@ class CMP(object):
                 optim.zero_grad()
                 z = self.encoder.sample(
                     w, samples=self.cfg.number_of_oversample, reparameterization=True)
-                de = self.decoder.mse_error(w, z, im, c).sum()
-                ee = self.encoder.Dkl(w).sum()
+                de = self.decoder.mse_error(w, z, im, c).mean()
+                ee = self.encoder.Dkl(w).mean()
                 l = de + ee
                 l.backward()
                 optim.step()
@@ -127,6 +127,7 @@ class CMP(object):
         tau, cls, imo = tuple(zip(*batch))
         env = self.cfg.env(self.cfg)
         env.display(tauo, imo, cls, interactive=True)
+        # env.display(tau, imo, cls, interactive=True)
 
 
 def main():
