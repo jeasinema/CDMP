@@ -14,6 +14,7 @@ from colorize import *
 
 cfg = Config()
 logger = Logger(os.path.join(cfg.log_path, cfg.experiment_name))
+torch.cuda.set_device(cfg.gpu)
 
 class CMP(object):
     def __init__(self, config):
@@ -37,9 +38,9 @@ class CMP(object):
                                   condition_net=self.condition_net)
         self.use_gpu = (self.cfg.use_gpu and torch.cuda.is_available())
         if self.use_gpu:
-            print("Use GPU for training, all parameters will move to GPU 0")
-            self.encoder.cuda(0)
-            self.decoder.cuda(0)
+            print("Use GPU for training, all parameters will move to GPU {}".format(self.cfg.gpu))
+            self.encoder.cuda()
+            self.decoder.cuda()
 
         # TODO: loading from check points
 
@@ -118,9 +119,14 @@ class CMP(object):
             if epoch != 0 and epoch % self.cfg.display_interval == 0:
                 img, img_gt, feature = self.test()
                 feature = feature.transpose([0,2,3,1]).sum(axis=-1, keepdims=True)
-                feature = colorize(feature[0, ...], 12)
+                h = feature.shape[1]*12
+                heatmap = np.zeros((h*2 + 20*3, h*3 + 20*4, 3), 
+                        dtype=np.uint8)
+                for ind in range(feature.shape[0]):
+                    heatmap[(ind//3)*(h+20)+20:(ind//3)*(h+20)+20+h, 
+                            (ind%3)*(h+20)+20:(ind%3)*(h+20)+20+h, :] = colorize(feature[ind, ...], 12)
                 logger.log_images('test_img', img, epoch)
-                logger.log_images('heatmap', feature, epoch)
+                logger.log_images('heatmap', heatmap, epoch)
                 logger.log_images('test_img_gt', img_gt, epoch)
 
     # generator: (task_id, img) x n_batch

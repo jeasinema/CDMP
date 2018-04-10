@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Tue 10 Apr 2018 10:50:10 PM CST
+# Last Modified : Wed 11 Apr 2018 02:03:57 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from utils import *
+from rbf import RBF
 
 
 class Env(object):
@@ -50,15 +51,15 @@ class Env(object):
                 traj_id = i
                 break
 
-        tau = self.traj_mean[traj_id]
-        # tau += np.random.normal(0., 0.025, tau.shape) * \
-        #     np.expand_dims(np.sin(self.t * np.pi), 1)
+        tau = RBF.calculate(self.traj_mean[traj_id], 20)
+        tau += np.random.normal(0., 0.05) * np.expand_dims(np.sin(np.linspace(0, 1, 20) * np.pi), 1)
+        tau = RBF.generate(tau, self.cfg.number_time_samples)
         im = np.ones(self.cfg.image_size +
                      (self.cfg.image_channels,), np.float32)
         for i in range(self.cfg.number_of_tasks):
             x, y = self.__remap_data_to_image(*self.center[i])
-            cv2.rectangle(im, (int(x - 2), int(y - 2)), (int(x + 2),
-                                                         int(y + 2)), self.color[im_id[i]], cv2.FILLED)
+            cv2.rectangle(im, (int(x - 5), int(y - 5)), (int(x + 5),
+                                                         int(y + 5)), self.color[im_id[i]], cv2.FILLED)
         return tau, task_id, im
 
     def display(self, tau, im, c=None, interactive=False):
