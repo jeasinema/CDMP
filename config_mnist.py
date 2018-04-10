@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月10日 星期二 10时44分03秒
+# Last Modified : 2018年04月10日 星期二 13时21分07秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -14,12 +14,12 @@ from utils import *
 class Config(object):
     def __init__(self):
         # task properties
-        self.number_of_tasks = 4            # n_c
+        self.number_of_tasks = 10            # n_c
         self.trajectory_dimension = 2       # n_dim
-        self.image_size = (100, 100)        # sz_im
+        self.image_size = (28, 28)        # sz_im
         self.image_x_range = (-1., 1.)
         self.image_y_range = (0., 1.)
-        self.image_channels = 3             # ch_im
+        self.image_channels = 1             # ch_im
         self.number_of_hidden = 16           # n_z
         self.number_of_MP_kernels = 10      # n_k
         self.number_time_samples = 100      # n_t
@@ -29,8 +29,8 @@ class Config(object):
         self.generator_test = batch_test    # function pointer
         self.env = Env                      # class pointer
         # training properties
-        self.batch_size_train = 200         # n_batch
-        self.batch_size_test = 6
+        self.batch_size_train = 50         # n_batch
+        self.batch_size_test = 50
         self.batches_train = 100
         self.epochs = 100
         self.continue_training = True
@@ -41,7 +41,7 @@ class Config(object):
         self.multi_threads = 4
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Four_Point_Reacher"
+        self.experiment_name = "MNIST"
 
 
 if __name__ == '__main__':
