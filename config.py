@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月10日 星期二 03时28分30秒
+# Last Modified : 2018年04月10日 星期二 14时18分32秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -29,7 +29,7 @@ class Config(object):
         self.generator_test = batch_test    # function pointer
         self.env = Env                      # class pointer
         # training properties
-        self.batch_size_train = 200         # n_batch
+        self.batch_size_train = 50         # n_batch
         self.batch_size_test = 6
         self.batches_train = 100
         self.epochs = 100
