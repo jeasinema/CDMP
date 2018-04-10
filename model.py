@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月10日 星期二 02时09分03秒
+# Last Modified : 2018年04月10日 星期二 16时21分43秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -214,8 +214,7 @@ class NN_qz_w(torch.nn.Module):
             # p(x)~N(u1, v1), q(x)~N(u2, v2)
             # Dkl(p||q) = 0.5 * (log(|v2|/|v1|) - d + tr(v2^-1 * v1) + (u1 - u2)' * v2^-1 * (u1 - u2))
             # for diagonal v, Dkl(p||q) = 0.5*(sum(log(v2[i])-log(v1[i])+v1[i]/v2[i]+(u1[i]-u2[i])**2/v2[i]-1))
-            return 0.5 * ((logvar2 - logvar1 + torch.exp(logvar1 - logvar2) + (mean1 - mean2)**2.) / torch.exp(logvar2) - 1)\
-                .sum(-1).sum(-1)
+            return (logvar2 - logvar1 + (torch.exp(logvar1)**2 + (mean1 - mean2)**2)/(2*torch.exp(logvar2)**2) - 1/2).sum(-1)
 
         mean, logvar = self.forward(w, im, c)
         if next(self.fc1.parameters()).is_cuda:

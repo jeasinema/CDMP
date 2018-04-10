@@ -109,8 +109,9 @@ class CMP(object):
                 torch.save(net_param, check_point_file)
                 print("Check point saved @ %s" % check_point_file)
             if epoch != 0 and epoch % self.cfg.display_interval == 0:
-                img = self.test()
+                img, img_gt = self.test()
                 logger.log_images('test_img', img, epoch)
+                logger.log_images('test_img_gt', img_gt, epoch)
 
     # generator: (task_id, img) x n_batch
     def test(self):
@@ -141,7 +142,8 @@ class CMP(object):
         tau, cls, imo = tuple(zip(*batch))
         env = self.cfg.env(self.cfg)
         img = env.display(tauo, imo, cls, interactive=True)
-        return img 
+        img_gt = env.display(tau, imo, cls, interactive=True)
+        return img, img_gt 
 
 
 def main():
