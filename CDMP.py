@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -32,8 +33,8 @@ class CMP(object):
         self.use_gpu = (self.cfg.use_gpu and torch.cuda.is_available())
         if self.use_gpu:
             print("Use GPU for training, all parameters will move to GPU 0")
-            self.encoder.cuda(0)
-            self.decoder.cuda(0)
+            self.encoder.model = nn.DataParallel(self.encoder.model, device_ids=cfg.device_id).cuda()
+            self.decoder.model = nn.DataParallel(self.decoder.model, device_ids=cfg.device_id).cuda()
 
         # TODO: loading from check points
 
@@ -62,9 +63,11 @@ class CMP(object):
                     torch.autograd.Variable(batch_im)
 
         optim = torch.optim.Adam(
-            list(self.decoder.parameters()) + list(self.encoder.parameters()))
+            list(self.decoder.model.parameters()) + list(self.encoder.model.parameters()))
         loss = []
         for epoch in range(self.cfg.epochs):
+            self.encoder.model.train()
+            self.decoder.model.train()
             avg_loss = []
             avg_loss_de = []
             avg_loss_ee = []
@@ -100,8 +103,8 @@ class CMP(object):
                     "epoch": epoch,
                     "config": self.cfg,
                     "loss": loss,
-                    "encoder": self.encoder.state_dict(),
-                    "decoder": self.decoder.state_dict()
+                    "encoder": self.encoder.model.state_dict(),
+                    "decoder": self.decoder.model.state_dict()
                 }
                 os.makedirs(self.cfg.check_point_path, exist_ok=True)
                 check_point_file = os.path.join(self.cfg.check_point_path,
@@ -134,6 +137,9 @@ class CMP(object):
                     torch.autograd.Variable(batch_c, volatile=True),\
                     torch.autograd.Variable(batch_im, volatile=True)
 
+
+        self.encoder.model.eval()
+        self.decoder.model.eval()
         batch = next(self.cfg.generator_test(self.cfg))
         z, c, im = batchToVariable(batch)
         tauo = (RBF.generate(wo, self.cfg.number_time_samples)
