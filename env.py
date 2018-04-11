@@ -49,9 +49,14 @@ class Env(object):
                 traj_id = i
                 break
 
-        tau = self.traj_mean[traj_id].copy()
-        tau += np.random.normal(0., 0.025) * np.expand_dims(np.sin(np.linspace(0, 1, tau.shape[0]) * np.pi), 1)
-        im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.float32)
+        tau_mean = self.traj_mean[traj_id]
+        noise = np.random.normal(0., self.cfg.trajectory_variance) * \
+                np.expand_dims(np.sin(np.linspace(0, 1, tau_mean.shape[0]) * np.pi), 1)
+        noise_dir = np.asarray((-(tau_mean[-1] - tau_mean[0])[1], (tau_mean[-1] - tau_mean[0])[0]),
+                               dtype=np.float32)
+        noise_dir /= np.linalg.norm(noise_dir)
+        tau = tau_mean + noise_dir * noise
+        im = np.ones(self.cfg.image_size + (self.cfg.image_channels,), np.float32)
         for i in range(self.cfg.number_of_tasks):
             x, y = self.__remap_data_to_image(*self.center[i])
             cv2.rectangle(im, (int(x - 5), int(y - 5)), (int(x + 5), int(y + 5)), self.color[im_id[i]], cv2.FILLED)
