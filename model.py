@@ -4,23 +4,20 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Tue 10 Apr 2018 03:30:04 PM CST
+# Last Modified : Wed 11 Apr 2018 11:27:14 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
 import numpy as np
 
 
-class NN_pw_zimc(object):
+class NN_img_c(object):
     class Model(torch.nn.Module):
-        def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k):
-            super(NN_pw_zimc.Model, self).__init__()
-            self.sz_image = sz_image
+        def __init__(self, sz_image, ch_image, tasks):
+            super(NN_img_c.Model, self).__init__()
+            self.sz_iamge = sz_image
             self.ch = ch_image
             self.tasks = tasks
-            self.n_z = n_z
-            self.dim_w = dim_w
-            self.n_k = n_k
 
             # for image input
             self.conv1 = torch.nn.Conv2d(self.ch, 64, kernel_size=3, padding=1)
@@ -35,15 +32,63 @@ class NN_pw_zimc(object):
             self.fc_img1 = torch.nn.Linear(
                 128 * (sz_image[0] // 3 // 2 // 2) * (sz_image[1] // 3 // 2 // 2), 512)
 
-            # for z input
-            self.fc_z1 = torch.nn.Linear(self.n_z, 128)
-            self.drop_z = torch.nn.Dropout()
-            self.fc_z2 = torch.nn.Linear(128, 512)
-
             # for c input
             self.fc_c1 = torch.nn.Linear(self.tasks, 128)
             self.drop_c = torch.nn.Dropout()
             self.fc_c2 = torch.nn.Linear(128, 512)
+
+            self.relu = torch.nn.ReLU()
+            self.sigmoid = torch.nn.Sigmoid()
+
+        def forward(self, im, c):
+            n_batch = c.size(0)
+
+            # image
+            im_x = self.relu(self.bn1(self.conv1(im)))
+            im_x = self.pool1(im_x)
+            im_x = self.relu(self.bn2(self.conv2(im_x)))
+            im_x = self.pool2(im_x)
+            im_x = self.relu(self.bn3(self.conv3(im_x)))
+            im_x = self.pool3(im_x).view(n_batch, -1)
+            im_x = self.fc_img1(im_x)
+
+            # tasks
+            c_x = self.relu(self.fc_c1(c))
+            c_x = self.drop_c(c_x)
+            c_x = self.fc_c2(c_x)
+
+            return torch.cat((im_x, c_x), 1)
+
+    def __init__(self, *args, **kwargs):
+        self.model = self.Model(*args, **kwargs)
+
+    def feature_map(self, im):
+        im_x = self.relu(self.bn1(self.conv1(im)))
+        im_x = self.pool1(im_x)
+        im_x = self.relu(self.bn2(self.conv2(im_x)))
+        im_x = self.pool2(im_x)
+        im_x = self.relu(self.bn3(self.conv3(im_x)))
+        im_x = self.pool3(im_x)
+        
+        return im_x
+
+
+class NN_pw_zimc(object):
+    class Model(torch.nn.Module):
+        def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k, condition_net):
+            super(NN_pw_zimc.Model, self).__init__()
+            self.sz_image = sz_image
+            self.ch = ch_image
+            self.tasks = tasks
+            self.n_z = n_z
+            self.dim_w = dim_w
+            self.n_k = n_k
+            self.condition_net = condition_net
+
+            # for z input
+            self.fc_z1 = torch.nn.Linear(self.n_z, 128)
+            self.drop_z = torch.nn.Dropout()
+            self.fc_z2 = torch.nn.Linear(128, 512)
 
             # merge
             self.fc1 = torch.nn.Linear(3 * 512, 512)
@@ -61,19 +106,7 @@ class NN_pw_zimc(object):
         def forward(self, z, im, c):
             n_batch = z.size(0)
 
-            # image
-            im_x = self.relu(self.bn1(self.conv1(im)))
-            im_x = self.pool1(im_x)
-            im_x = self.relu(self.bn2(self.conv2(im_x)))
-            im_x = self.pool2(im_x)
-            im_x = self.relu(self.bn3(self.conv3(im_x)))
-            im_x = self.pool3(im_x).view(n_batch, -1)
-            im_x = self.fc_img1(im_x)
-
-            # tasks
-            c_x = self.relu(self.fc_c1(c))
-            c_x = self.drop_c(c_x)
-            c_x = self.fc_c2(c_x)
+            condition = self.condition_net(im, c)
 
             # conditions
             z_x = self.relu(self.fc_z1(z))
@@ -81,7 +114,7 @@ class NN_pw_zimc(object):
             z_x = self.fc_z2(z_x)
 
             # merge
-            x = self.relu(self.fc1(torch.cat((im_x, c_x, z_x), 1)))
+            x = self.relu(self.fc1(torch.cat((condition, z_x), 1)))
             x = self.drop1(x)
             x = self.relu(self.fc2(x))
             x = self.drop2(x)
@@ -91,6 +124,7 @@ class NN_pw_zimc(object):
 
     def __init__(self, *args, **kwargs):
         self.model = self.Model(*args, **kwargs)
+
 
     # input z(n_batch, n_z), im(n_batch, ch, h, w), c(n_batch, tasks);
     # output mean(n_samples, n_batch, n_k, dim_w), logvar(n_samples, n_batch, n_k, dim_w)
@@ -137,7 +171,7 @@ class NN_pw_zimc(object):
 
 class NN_qz_w(object):
     class Model(torch.nn.Module):
-        def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k):
+        def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k, conditon_net):
             super(NN_qz_w.Model, self).__init__()
             self.sz_image = sz_image
             self.ch = ch_image
@@ -145,24 +179,7 @@ class NN_qz_w(object):
             self.n_z = n_z
             self.dim_w = dim_w
             self.n_k = n_k
-
-            # for image input
-            self.conv1 = torch.nn.Conv2d(self.ch, 64, kernel_size=3, padding=1)
-            self.bn1 = torch.nn.BatchNorm2d(64)
-            self.pool1 = torch.nn.MaxPool2d(3)
-            self.conv2 = torch.nn.Conv2d(64, 128, kernel_size=3, padding=1)
-            self.bn2 = torch.nn.BatchNorm2d(128)
-            self.pool2 = torch.nn.MaxPool2d(2)
-            self.conv3 = torch.nn.Conv2d(128, 128, kernel_size=3, padding=1)
-            self.bn3 = torch.nn.BatchNorm2d(128)
-            self.pool3 = torch.nn.MaxPool2d(2)
-            self.fc_img1 = torch.nn.Linear(
-                128 * (sz_image[0] // 3 // 2 // 2) * (sz_image[1] // 3 // 2 // 2), 512)
-
-            # for c input
-            self.fc_c1 = torch.nn.Linear(self.tasks, 128)
-            self.drop_c = torch.nn.Dropout()
-            self.fc_c2 = torch.nn.Linear(128, 512)
+            self.condition_net = condition_net
 
             # for w input
             self.fc_w1 = torch.nn.Linear(self.dim_w * self.n_k, 128)
@@ -185,19 +202,7 @@ class NN_qz_w(object):
         def forward(self, w, im, c):
             n_batch = w.size(0)
 
-            # image
-            im_x = self.relu(self.bn1(self.conv1(im)))
-            im_x = self.pool1(im_x)
-            im_x = self.relu(self.bn2(self.conv2(im_x)))
-            im_x = self.pool2(im_x)
-            im_x = self.relu(self.bn3(self.conv3(im_x)))
-            im_x = self.pool3(im_x).view(n_batch, -1)
-            im_x = self.fc_img1(im_x)
-
-            # tasks
-            c_x = self.relu(self.fc_c1(c))
-            c_x = self.drop_c(c_x)
-            c_x = self.fc_c2(c_x)
+            condition = self.condition_net(im, c)
 
             # w
             w_x = self.relu(self.fc_w1(w.view(n_batch, -1)))
@@ -205,7 +210,7 @@ class NN_qz_w(object):
             w_x = self.relu(self.fc_w2(w_x))
 
             # merge
-            x = self.relu(self.fc1(torch.cat((im_x, c_x, w_x), 1)))
+            x = self.relu(self.fc1(torch.cat((condition, w_x), 1)))
             x = self.drop1(x)
             x = self.relu(self.fc2(x))
             x = self.drop2(x)
@@ -244,8 +249,7 @@ class NN_qz_w(object):
             # p(x)~N(u1, v1), q(x)~N(u2, v2)
             # Dkl(p||q) = 0.5 * (log(|v2|/|v1|) - d + tr(v2^-1 * v1) + (u1 - u2)' * v2^-1 * (u1 - u2))
             # for diagonal v, Dkl(p||q) = 0.5*(sum(log(v2[i])-log(v1[i])+v1[i]/v2[i]+(u1[i]-u2[i])**2/v2[i]-1))
-            return 0.5 * ((logvar2 - logvar1 + torch.exp(logvar1 - logvar2) + (mean1 - mean2)**2.) / torch.exp(logvar2) - 1)\
-                .sum(-1).sum(-1)
+            return (logvar2 - logvar1 + (torch.exp(logvar1)**2 + (mean1 - mean2)**2) / (2 * torch.exp(logvar2)**2) - 1 / 2).sum(-1)
 
         mean, logvar = self.model.forward(w, im, c)
         if mean.data.is_cuda:

@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Tue 10 Apr 2018 03:40:29 PM CST
+# Last Modified : Wed 11 Apr 2018 11:03:50 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -43,6 +43,7 @@ class Config(object):
         self.check_point_path = "./assets/learned_model"
         self.experiment_name = "Four_Point_Reacher"
         self.device_id=[0,1,2,3]
+        self.gpu=3
 
 
 if __name__ == '__main__':
