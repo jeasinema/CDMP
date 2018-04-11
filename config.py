@@ -4,11 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-<<<<<<< Updated upstream
-# Last Modified : Wed 11 Apr 2018 05:51:41 PM CST
-=======
-# Last Modified : Wed 11 Apr 2018 05:26:16 PM CST
->>>>>>> Stashed changes
+# Last Modified : Wed 11 Apr 2018 05:54:18 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -47,7 +43,7 @@ class Config(object):
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
         self.experiment_name = "Four_Point_Reacher_fixenv"
-        self.gpu=3
+        self.gpu=0
 
 
 if __name__ == '__main__':
