@@ -4,7 +4,11 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 05:21:21 PM CST
+<<<<<<< Updated upstream
+# Last Modified : Wed 11 Apr 2018 05:51:41 PM CST
+=======
+# Last Modified : Wed 11 Apr 2018 05:26:16 PM CST
+>>>>>>> Stashed changes
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -14,7 +18,7 @@ from utils import *
 class Config(object):
     def __init__(self):
         # task properties
-        self.number_of_tasks = 10           # n_c
+        self.number_of_tasks = 4           # n_c
         self.trajectory_dimension = 2       # n_dim
         self.image_size = (100, 100)        # sz_im
         self.image_x_range = (-1., 1.)
@@ -30,7 +34,7 @@ class Config(object):
         self.generator_test = batch_test    # function pointer
         self.env = Env                      # class pointer
         # training properties
-        self.batch_size_train = 100         # n_batch
+        self.batch_size_train = 256         # n_batch
         self.batch_size_test = 6
         self.batches_train = 100
         self.epochs = 100
@@ -42,8 +46,8 @@ class Config(object):
         self.multi_threads = 4
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Four_Point_Reacher_newenv3"
-        self.gpu=0
+        self.experiment_name = "Four_Point_Reacher_fixenv"
+        self.gpu=3
 
 
 if __name__ == '__main__':
