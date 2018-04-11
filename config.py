@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 08:45:19 PM CST
+# Last Modified : Wed 11 Apr 2018 09:50:08 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -23,7 +23,7 @@ class Config(object):
         self.number_of_hidden = 64          # n_z
         self.number_of_MP_kernels = 10      # n_k
         self.number_time_samples = 100      # n_t
-        self.number_of_oversample = None      # n_oversample
+        self.number_of_oversample = 10      # n_oversample
         self.trajectory_variance = 0.05
         # data loader
         self.generator_train = batch_train  # function pointer
