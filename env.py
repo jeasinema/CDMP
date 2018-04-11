@@ -20,12 +20,13 @@ class Env(object):
         self.cfg = config
 
         t = np.linspace(0, 1, self.cfg.number_time_samples, dtype=np.float32)
-        self.center = ((-0.75, 0.75), (-0.3, 0.75), (0.3, 0.75), (0.75, 0.75))
-        self.color = ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.), (0., 0., 0.))
-        self.traj_mean = (np.vstack([self.center[0][0] * t ** .5, self.center[0][1] * t]).T,
-                          np.vstack([self.center[1][0] * t ** .5, self.center[1][1] * t]).T,
-                          np.vstack([self.center[2][0] * t ** .5, self.center[2][1] * t]).T,
-                          np.vstack([self.center[3][0] * t ** .5, self.center[3][1] * t]).T)
+        self.center = ((-.6, .75),  (-.2, .75),  (.2, .75),  (.6, .75),
+                       (-.6, 0.),                            (.6, 0.),
+                       (-.6, -.75), (-.2, -.75), (.2, -.75), (.6, -.75))
+        self.color = ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.), (0., 0., 0.), (1., 1., 0.),
+                      (0., 1., 1.), (1., 0., 1.), (1., .75, 0.), (.75, 0., 1.), (0., 1., .75))
+        self.traj_mean = tuple(np.vstack([self.center[i][0] * t, self.center[i][1] * t ** .5]).T
+                               for i in range(self.cfg.number_of_tasks))
 
     # remap x[-1, 1], y[0, 1] to image coordinate
     def __remap_data_to_image(self, x, y):
@@ -40,7 +41,7 @@ class Env(object):
         if task_id is None:
             task_id = np.random.randint(0, self.cfg.number_of_tasks)
         if im_id is None:
-            im_id = list(range(4))
+            im_id = list(range(self.cfg.number_of_tasks))
             np.random.shuffle(im_id)
         traj_id = 0
         for i in range(self.cfg.number_of_tasks):
@@ -49,11 +50,14 @@ class Env(object):
                 break
 
         tau = self.traj_mean[traj_id]
-        tau += np.random.normal(0., 0.05) * np.expand_dims(np.sin(np.linspace(0, 1, tau.shape[0]) * np.pi), 1)
+        tau += np.random.normal(0., 0.025) * np.expand_dims(np.sin(np.linspace(0, 1, tau.shape[0]) * np.pi), 1)
         im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.float32)
         for i in range(self.cfg.number_of_tasks):
             x, y = self.__remap_data_to_image(*self.center[i])
-            cv2.rectangle(im, (int(x - 3), int(y - 3)), (int(x + 3), int(y + 3)), self.color[im_id[i]], cv2.FILLED)
+            cv2.rectangle(im, (int(x - 5), int(y - 5)), (int(x + 5), int(y + 5)), self.color[im_id[i]], cv2.FILLED)
+            txsz, baseline = cv2.getTextSize(str(im_id[i]), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.3, 1)
+            pos = int(x - txsz[0] // 2), int(y + txsz[1] // 2)
+            cv2.putText(im, str(im_id[i]), pos, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.3, (.6, .6, .6), 1)
         return tau, task_id, im
 
     def display(self, tau, im, c=None, interactive=False):

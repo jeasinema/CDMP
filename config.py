@@ -14,13 +14,13 @@ from utils import *
 class Config(object):
     def __init__(self):
         # task properties
-        self.number_of_tasks = 4            # n_c
+        self.number_of_tasks = 10           # n_c
         self.trajectory_dimension = 2       # n_dim
         self.image_size = (100, 100)        # sz_im
         self.image_x_range = (-1., 1.)
         self.image_y_range = (0., 1.)
         self.image_channels = 3             # ch_im
-        self.number_of_hidden = 16           # n_z
+        self.number_of_hidden = 16          # n_z
         self.number_of_MP_kernels = 10      # n_k
         self.number_time_samples = 100      # n_t
         self.number_of_oversample = 10      # n_oversample
