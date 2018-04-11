@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 12:31:44 PM CST
+# Last Modified : Wed 11 Apr 2018 01:39:55 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -31,7 +31,7 @@ class Config(object):
         # training properties
         self.batch_size_train = 256         # n_batch
         self.batch_size_test = 6
-        self.batches_train = 2
+        self.batches_train = 100
         self.epochs = 100
         self.continue_training = True
         self.save_interval = 10             # -1 for saving best model

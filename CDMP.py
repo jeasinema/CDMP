@@ -9,11 +9,11 @@ from config import Config
 from utils import bar
 from rbf import RBF
 from model import *
-from tensorboard_logging import Logger
-from colorize import *
+# from colorize import *
+# from tensorboard_logging import Logger
 
 cfg = Config()
-logger = Logger(os.path.join(cfg.log_path, cfg.experiment_name))
+# logger = Logger(os.path.join(cfg.log_path, cfg.experiment_name))
 torch.cuda.set_device(cfg.gpu)
 
 class CMP(object):
@@ -97,9 +97,9 @@ class CMP(object):
                 if i + 1 >= self.cfg.batches_train:
                     loss.append(sum(avg_loss) / len(avg_loss))
                     print("Epoch=%d, Average Loss=%f" % (epoch + 1, loss[-1]))
-                    logger.log_scalar('loss', sum(avg_loss)/len(avg_loss), epoch)
-                    logger.log_scalar('loss_de', sum(avg_loss_de)/len(avg_loss_de), epoch)
-                    logger.log_scalar('loss_ee', sum(avg_loss_ee)/len(avg_loss_ee), epoch)
+                    # logger.log_scalar('loss', sum(avg_loss)/len(avg_loss), epoch)
+                    # logger.log_scalar('loss_de', sum(avg_loss_de)/len(avg_loss_de), epoch)
+                    # logger.log_scalar('loss_ee', sum(avg_loss_ee)/len(avg_loss_ee), epoch)
                     break
             if (epoch % self.cfg.save_interval == 0 and epoch != 0) or\
                     (self.cfg.save_interval <= 0 and loss[-1] == min(loss)):
@@ -117,16 +117,16 @@ class CMP(object):
                 print("Check point saved @ %s" % check_point_file)
             if epoch != 0 and epoch % self.cfg.display_interval == 0:
                 img, img_gt, feature = self.test()
-                feature = feature.transpose([0,2,3,1]).sum(axis=-1, keepdims=True)
-                h = feature.shape[1]*12 # CNN factor
-                heatmap = np.zeros((h*2 + 20*3, h*3 + 20*4, 3),  # output 2*3
-                        dtype=np.uint8)
-                for ind in range(feature.shape[0]):
-                    heatmap[(ind//3)*(h+20)+20:(ind//3)*(h+20)+20+h, 
-                            (ind%3)*(h+20)+20:(ind%3)*(h+20)+20+h, :] = colorize(feature[ind, ...], 12)
-                logger.log_images('test_img', img, epoch)
-                logger.log_images('heatmap', heatmap, epoch)
-                logger.log_images('test_img_gt', img_gt, epoch)
+                # feature = feature.transpose([0,2,3,1]).sum(axis=-1, keepdims=True)
+                # h = feature.shape[1]*12 # CNN factor
+                # heatmap = np.zeros((h*2 + 20*3, h*3 + 20*4, 3),  # output 2*3
+                #         dtype=np.uint8)
+                # for ind in range(feature.shape[0]):
+                #     heatmap[(ind//3)*(h+20)+20:(ind//3)*(h+20)+20+h, 
+                #             (ind%3)*(h+20)+20:(ind%3)*(h+20)+20+h, :] = colorize(feature[ind, ...], 12)
+                # logger.log_images('test_img', img, epoch)
+                # logger.log_images('heatmap', heatmap, epoch)
+                # logger.log_images('test_img_gt', img_gt, epoch)
 
     # generator: (task_id, img) x n_batch
     def test(self):
@@ -152,7 +152,7 @@ class CMP(object):
 
         batch = next(self.cfg.generator_test(self.cfg))
         z, c, im = batchToVariable(batch)
-        tauo = (RBF.generate(wo, self.cfg.number_time_samples)
+        tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
                 for wo in self.decoder.sample(z, im, c).cpu().data.numpy())
         tau, cls, imo = tuple(zip(*batch))
         env = self.cfg.env(self.cfg)
