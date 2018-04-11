@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 02:03:57 AM CST
+# Last Modified : Wed 11 Apr 2018 02:39:51 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -52,7 +52,7 @@ class Env(object):
                 break
 
         tau = RBF.calculate(self.traj_mean[traj_id], 20)
-        tau += np.random.normal(0., 0.05) * np.expand_dims(np.sin(np.linspace(0, 1, 20) * np.pi), 1)
+        tau += np.random.normal(0., 0.1) * np.expand_dims(np.sin(np.linspace(0, 1, 20) * np.pi), 1)
         tau = RBF.generate(tau, self.cfg.number_time_samples)
         im = np.ones(self.cfg.image_size +
                      (self.cfg.image_channels,), np.float32)
