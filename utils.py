@@ -4,7 +4,7 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 03:06:08 PM CST
+# Last Modified : Wed 11 Apr 2018 03:45:43 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 
@@ -34,14 +34,16 @@ def bar(current, total, prefix="", suffix="", bar_sz=25, end_string=None):
 def batch_train(config):
     env = config.env(config)
     while True:
-        yield tuple(env.sample(im_id=(0,1,2,3,4,5,6,7,8,9)) for _ in range(config.batch_size_train))
+        # yield tuple(env.sample(im_id=(0,1,2,3,4,5,6,7,8,9)) for _ in range(config.batch_size_train))
+        yield tuple(env.sample(task_id=0) for _ in range(config.batch_size_train))
 
 
 # generator: (traj, task, image) x batch_size
 def batch_test(config):
     env = config.env(config)
     while True:
-        yield tuple(env.sample(im_id=(0,1,2,3,4,5,6,7,8,9)) for _ in range(config.batch_size_test))
+        # yield tuple(env.sample(im_id=(0,1,2,3,4,5,6,7,8,9)) for _ in range(config.batch_size_test))
+        yield tuple(env.sample(task_id=0) for _ in range(config.batch_size_test))
 
 
 if __name__ == '__main__':
