@@ -90,7 +90,6 @@ class CMP(object):
                 avg_loss_de.append(de.data[0])
                 avg_loss_ee.append(ee.data[0])
 
-                print('\b')
                 bar(i + 1, self.cfg.batches_train, "Epoch %d/%d: " % (epoch + 1, self.cfg.epochs),
                     " | D-Err=%f; E-Err=%f" % (de.data[0], ee.data[0]), end_string='')
 
