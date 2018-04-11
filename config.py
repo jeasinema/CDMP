@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 02:01:59 PM CST
+# Last Modified : Wed 11 Apr 2018 03:11:47 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -41,8 +41,8 @@ class Config(object):
         self.multi_threads = 4
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Four_Point_Reacher_newenvt2"
-        self.gpu=0
+        self.experiment_name = "Four_Point_Reacher_newenvt_fixtask"
+        self.gpu=2
 
 
 if __name__ == '__main__':
