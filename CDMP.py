@@ -27,21 +27,20 @@ class CMP(object):
                                sz_image=self.cfg.image_size,
                                tasks=self.cfg.number_of_tasks,
                                dim_w=self.cfg.trajectory_dimension,
-                               n_k=self.cfg.number_of_MP_kernels,
-                               condition_net=self.condition_net.model)
+                               n_k=self.cfg.number_of_MP_kernels)
         self.decoder = NN_pw_zimc(sz_image=self.cfg.image_size,
                                   ch_image=self.cfg.image_channels,
                                   n_z=self.cfg.number_of_hidden,
                                   tasks=self.cfg.number_of_tasks,
                                   dim_w=self.cfg.trajectory_dimension,
-                                  n_k=self.cfg.number_of_MP_kernels,
-                                  condition_net=self.condition_net.model)
+                                  n_k=self.cfg.number_of_MP_kernels)
         self.use_gpu = (self.cfg.use_gpu and torch.cuda.is_available())
         if self.use_gpu:
             print("Use GPU for training, all parameters will move to GPU {}".format(self.cfg.device_id))
             self.encoder.model = nn.DataParallel(self.encoder.model, device_ids=cfg.device_id).cuda()
             self.decoder.model = nn.DataParallel(self.decoder.model, device_ids=cfg.device_id).cuda()
             self.condition_net.model = nn.DataParallel(self.condition_net.model, device_ids=cfg.device_id).cuda()
+
 
         # TODO: loading from check points
 
@@ -82,10 +81,11 @@ class CMP(object):
             for i, batch in enumerate(self.cfg.generator_train(self.cfg)):
                 w, c, im = batchToVariable(batch)
                 optim.zero_grad()
+                im_c = self.condition_net(im, c)
                 z = self.encoder.sample(
-                    w, im, c, samples=self.cfg.number_of_oversample, reparameterization=True)
-                de = self.decoder.mse_error(w, z, im, c).mean()
-                ee = self.encoder.Dkl(w, im, c).mean()
+                    w, im_c, samples=self.cfg.number_of_oversample, reparameterization=True)
+                de = self.decoder.mse_error(w, z, im_c).mean()
+                ee = self.encoder.Dkl(w, im_c).mean()
                 l = de + ee
                 l.backward()
                 optim.step()
@@ -133,6 +133,7 @@ class CMP(object):
                 logger.log_images('heatmap', heatmap, epoch)
                 logger.log_images('test_img_gt', img_gt, epoch)
 
+
     # generator: (task_id, img) x n_batch
     def test(self):
         def batchToVariable(traj_batch):
@@ -162,7 +163,7 @@ class CMP(object):
         batch = next(self.cfg.generator_test(self.cfg))
         z, c, im = batchToVariable(batch)
         tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
-                for wo in self.decoder.sample(z, im, c).cpu().data.numpy())
+                for wo in self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy())
         tau, cls, imo = tuple(zip(*batch))
         env = self.cfg.env(self.cfg)
         img = env.display(tauo, imo, cls, interactive=True)

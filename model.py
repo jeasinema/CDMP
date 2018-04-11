@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 11:53:05 AM CST
+# Last Modified : Wed 11 Apr 2018 09:09:51 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -70,7 +70,7 @@ class NN_img_c(object):
 
 class NN_pw_zimc(object):
     class Model(torch.nn.Module):
-        def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k, condition_net):
+        def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k):
             super(NN_pw_zimc.Model, self).__init__()
             self.sz_image = sz_image
             self.ch = ch_image
@@ -78,7 +78,6 @@ class NN_pw_zimc(object):
             self.n_z = n_z
             self.dim_w = dim_w
             self.n_k = n_k
-            self.condition_net = condition_net
 
             # for z input
             self.fc_z1 = torch.nn.Linear(self.n_z, 128)
@@ -96,12 +95,10 @@ class NN_pw_zimc(object):
             self.relu = torch.nn.ReLU()
             self.sigmoid = torch.nn.Sigmoid()
 
-        # input z(n_batch, n_z), im(n_batch, ch, h, w), c(n_batch, tasks);
+        # input z(n_batch, n_z), im_c(n_batch, channel)
         # output mean(n_batch, k_w, dim_w), logvar(n_batch, k_w, dim_w)
-        def forward(self, z, im, c):
+        def forward(self, z, im_c):
             n_batch = z.size(0)
-
-            condition, _ = self.condition_net(im, c)
 
             # conditions
             z_x = self.relu(self.fc_z1(z))
@@ -109,7 +106,7 @@ class NN_pw_zimc(object):
             z_x = self.fc_z2(z_x)
 
             # merge
-            x = self.relu(self.fc1(torch.cat((condition, z_x), 1)))
+            x = self.relu(self.fc1(torch.cat((im_c, z_x), 1)))
             x = self.drop1(x)
             x = self.relu(self.fc2(x))
             x = self.drop2(x)
@@ -120,11 +117,10 @@ class NN_pw_zimc(object):
     def __init__(self, *args, **kwargs):
         self.model = self.Model(*args, **kwargs)
 
-
-    # input z(n_batch, n_z), im(n_batch, ch, h, w), c(n_batch, tasks);
+    # input z(n_batch, n_z), im_c(n_batch, channel)
     # output mean(n_samples, n_batch, n_k, dim_w), logvar(n_samples, n_batch, n_k, dim_w)
-    def sample(self, z, im, c, samples=None, fixed=True):
-        mean, logvar = self.model.forward(z, im, c)
+    def sample(self, z, im_c, samples=None, fixed=True):
+        mean, logvar = self.model.forward(z, im_c)
         dist = torch.distributions.Normal(mean, torch.exp(logvar))
         if samples is None:
             if fixed:
@@ -134,39 +130,39 @@ class NN_pw_zimc(object):
         else:
             return dist.sample_n(samples)
 
-    # input w(n_batch, k_w, dim_w) z(n_batch, n_z), im(n_batch, ch, h, w), c(n_batch, tasks);
+    # input w(n_batch, k_w, dim_w) z(n_batch, n_z), im_c(n_batch, channel)
     # output (n_batch,)
     # or if z is batch of samples, output E(n_batch)
-    def log_prob(self, w, z, im, c):
+    def log_prob(self, w, z, im_c):
         if len(z.size()) == len(c.size()) + 1:
             m = z.size(0)
-            mean, logvar = self.model.forward(
-                z.view(-1, z.size(-1)), im.repeat(m, 1, 1, 1), c.repeat(m, 1))
+            mean, logvar = self.forward(
+                z.view(-1, z.size(-1)), im_c.repeat(m, 1))
             dist = torch.distributions.Normal(mean, torch.exp(logvar))
-            return dist.log_prob(w.repeat(m, 1, 1)).view(m, *w.size()).sum(0).sum(-1).sum(-1) / m
+            return dist.log_prob(w.repeat(m, 1, 1)).view(m, *w.size()).sum(-1).sum(-1).mean()
         else:
-            mean, logvar = self.model.forward(z, im, c)
+            mean, logvar = self.forward(z, im_c)
             dist = torch.distributions.Normal(mean, torch.exp(logvar))
             return dist.log_prob(w).sum(-1).sum(-1)
 
-    # input w(n_batch, k_w, dim_w) z(n_batch, n_z), im(n_batch, ch, h, w), c(n_batch, tasks);
+    # input w(n_batch, k_w, dim_w) z(n_batch, n_z), im_c(n_batch, channel)
     # output (n_batch,)
     # or if z is batch of samples, output E(n_batch)
-    def mse_error(self, w, z, im, c):
-        if len(z.size()) == len(c.size()) + 1:
+    def mse_error(self, w, z, im_c):
+        if len(z.size()) == len(im_c.size()) + 1:
             m = z.size(0)
-            mean, _ = self.model.forward(
-                z.view(-1, z.size(-1)), im.repeat(m, 1, 1, 1), c.repeat(m, 1))
-            return ((w.repeat(m, 1, 1) - mean)**2).view(m, *w.size()).sum(0).sum(-1).sum(-1) / m
+            mean, _ = self.forward(
+                z.view(-1, z.size(-1)), im_c.repeat(m, 1))
+            return ((w.repeat(m, 1, 1) - mean)**2).view(m, *w.size()).sum(-1).sum(-1).mean()
         else:
-            mean, logvar = self.model.forward(z, im, c)
+            mean, logvar = self.forward(z, im_c)
             dist = torch.distributions.Normal(mean, torch.exp(logvar))
             return ((w - mean)**2).sum(-1).sum(-1)
 
 
 class NN_qz_w(object):
     class Model(torch.nn.Module):
-        def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k, condition_net):
+        def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k):
             super(NN_qz_w.Model, self).__init__()
             self.sz_image = sz_image
             self.ch = ch_image
@@ -174,7 +170,6 @@ class NN_qz_w(object):
             self.n_z = n_z
             self.dim_w = dim_w
             self.n_k = n_k
-            self.condition_net = condition_net
 
             # for w input
             self.fc_w1 = torch.nn.Linear(self.dim_w * self.n_k, 128)
@@ -192,12 +187,10 @@ class NN_qz_w(object):
             self.relu = torch.nn.ReLU()
             self.sigmoid = torch.nn.Sigmoid()
 
-        # input w(n_batch, k_w, dim_w), im(n_batch, ch, h, w), c(n_batch, tasks);
+        # input w(n_batch, k_w, dim_w), im_c(n_batch, channel)
         # output mean(n_batch, n_z), logvar(n_batch, n_z)
-        def forward(self, w, im, c):
+        def forward(self, w, im_c):
             n_batch = w.size(0)
-
-            condition, _ = self.condition_net(im, c)
 
             # w
             w_x = self.relu(self.fc_w1(w.view(n_batch, -1)))
@@ -205,7 +198,7 @@ class NN_qz_w(object):
             w_x = self.relu(self.fc_w2(w_x))
 
             # merge
-            x = self.relu(self.fc1(torch.cat((condition, w_x), 1)))
+            x = self.relu(self.fc1(torch.cat((im_c, w_x), 1)))
             x = self.drop1(x)
             x = self.relu(self.fc2(x))
             x = self.drop2(x)
@@ -218,8 +211,9 @@ class NN_qz_w(object):
 
     # if samples is None, then return shape (n_batch, n_z)
     # else return shape (n_samples, n_batch, n_z)
-    def sample(self, w, im, c, samples=None, reparameterization=False):
-        mean, logvar = self.model.forward(w, im, c)
+    def sample(self, w, im_c, samples=None, reparameterization=False):
+        mean, logvar = self.model.forward(w, im_c)
+
         if reparameterization:
             dist = torch.distributions.Normal(
                 torch.zeros_like(mean), torch.ones_like(logvar))
@@ -239,15 +233,15 @@ class NN_qz_w(object):
                 return sample
 
     # return (n_batch,)
-    def Dkl(self, w, im, c):
+    def Dkl(self, w, im_c):
         def norm_Dkl(mean1, logvar1, mean2, logvar2):
             # p(x)~N(u1, v1), q(x)~N(u2, v2)
             # Dkl(p||q) = 0.5 * (log(|v2|/|v1|) - d + tr(v2^-1 * v1) + (u1 - u2)' * v2^-1 * (u1 - u2))
             # for diagonal v, Dkl(p||q) = 0.5*(sum(log(v2[i])-log(v1[i])+v1[i]/v2[i]+(u1[i]-u2[i])**2/v2[i]-1))
             return (logvar2 - logvar1 + (torch.exp(logvar1)**2 + (mean1 - mean2)**2) / (2 * torch.exp(logvar2)**2) - 1 / 2).sum(-1)
 
-        mean, logvar = self.model.forward(w, im, c)
-        if mean.data.is_cuda:
+        mean, logvar = self.forward(w, im_c)
+        if next(self.fc1.parameters()).is_cuda:
             mean_t, logvar_t = torch.zeros_like(mean).cuda(
             ).detach(), torch.zeros_like(logvar).cuda().detach()
         else:
