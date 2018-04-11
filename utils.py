@@ -34,14 +34,14 @@ def bar(current, total, prefix="", suffix="", bar_sz=25, end_string=None):
 def batch_train(config):
     env = config.env(config)
     while True:
-        yield tuple(env.sample(task_id=0) for _ in range(config.batch_size_train))
+        yield tuple(env.sample() for _ in range(config.batch_size_train))
 
 
 # generator: (traj, task, image) x batch_size
 def batch_test(config):
     env = config.env(config)
     while True:
-        yield tuple(env.sample(task_id=0) for _ in range(config.batch_size_test))
+        yield tuple(env.sample() for _ in range(config.batch_size_test))
 
 
 if __name__ == '__main__':
