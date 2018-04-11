@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 02:01:11 PM CST
+# Last Modified : 2018年04月11日 星期三 17时10分38秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -49,7 +49,7 @@ class Env(object):
                 traj_id = i
                 break
 
-        tau = self.traj_mean[traj_id]
+        tau = self.traj_mean[traj_id].copy()
         tau += np.random.normal(0., 0.025) * np.expand_dims(np.sin(np.linspace(0, 1, tau.shape[0]) * np.pi), 1)
         im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.float32)
         for i in range(self.cfg.number_of_tasks):
