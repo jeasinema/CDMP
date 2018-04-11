@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 10:45:02 AM CST
+# Last Modified : Wed 11 Apr 2018 12:48:03 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -51,7 +51,7 @@ class Env(object):
 
         tau = self.traj_mean[traj_id]
         tau += np.random.normal(0., 0.025) * np.expand_dims(np.sin(np.linspace(0, 1, tau.shape[0]) * np.pi), 1)
-        im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.float32)
+        im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.uint8)
         for i in range(self.cfg.number_of_tasks):
             x, y = self.__remap_data_to_image(*self.center[i])
             cv2.rectangle(im, (int(x - 5), int(y - 5)), (int(x + 5), int(y + 5)), self.color[im_id[i]], cv2.FILLED)
@@ -65,8 +65,8 @@ class Env(object):
             plt.close()
             plt.ion()
 
-        if (isinstance(im, np.ndarray) and len(im.shape) == 3) or len(im) == 1:
-            if len(im) == 1:
+        if (isinstance(tau, np.ndarray) and len(tau.shape) == 3) or len(tau) == 1:
+            if len(tau) == 1:
                 im = im[0]
                 tau = tau[0]
                 c = c[0]
@@ -80,14 +80,14 @@ class Env(object):
                 plt.title("Task_%d" % c)
 
         else:
-            if len(im) > 8:
+            if len(tau) > 8:
                 im = im[:8]
                 tau = tau[:8]
                 c = c[:8]
                 print(
                     "Warning: more then 8 samples are provided, only first 8 will be displayed")
 
-            n_batch = len(im)
+            n_batch = len(tau)
             if n_batch <= 3:
                 fig, axarr = plt.subplots(n_batch)
             elif n_batch == 4:
@@ -99,30 +99,26 @@ class Env(object):
             for w, i, t, f in zip(tau, im, c, range(n_batch)):
                 if n_batch <= 3:
                     axarr[f].imshow(i)
-                    axarr[f].plot(
-                        *self.__remap_data_to_image(w[:, 0], w[:, 1]))
+                    axarr[f].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
                     if t is not None:
                         axarr[f].set_title("Task_%d" % t)
                 elif n_batch == 4:
                     axarr[f // 2, f % 2].imshow(i)
-                    axarr[f // 2, f %
-                          2].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
+                    axarr[f // 2, f % 2].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
                     if t is not None:
                         axarr[f // 2, f % 2].set_title("Task_%d" % t)
                 elif n_batch <= 6:
                     axarr[f // 3, f % 3].set_yticklabels([])
                     axarr[f // 3, f % 3].set_xticklabels([])
                     axarr[f // 3, f % 3].imshow(i)
-                    axarr[f // 3, f %
-                          3].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
+                    axarr[f // 3, f % 3].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
                     if t is not None:
                         axarr[f // 3, f % 3].set_title("Task_%d" % t)
                 else:
                     axarr[f // 4, f % 4].set_yticklabels([])
                     axarr[f // 4, f % 4].set_xticklabels([])
                     axarr[f // 4, f % 4].imshow(i)
-                    axarr[f // 4, f %
-                          4].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
+                    axarr[f // 4, f % 4].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
                     if t is not None:
                         axarr[f // 4, f % 4].set_title("Task_%d" % t)
         if interactive:

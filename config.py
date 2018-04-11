@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 10:45:17 AM CST
+# Last Modified : Wed 11 Apr 2018 12:31:44 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -31,7 +31,7 @@ class Config(object):
         # training properties
         self.batch_size_train = 256         # n_batch
         self.batch_size_test = 6
-        self.batches_train = 100
+        self.batches_train = 2
         self.epochs = 100
         self.continue_training = True
         self.save_interval = 10             # -1 for saving best model
@@ -41,7 +41,7 @@ class Config(object):
         self.multi_threads = 4
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Four_Point_Reacher_0.1"
+        self.experiment_name = "Four_Point_Reacher_newenv"
         self.gpu=3
 
 
