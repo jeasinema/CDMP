@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 11:27:14 AM CST
+# Last Modified : Wed 11 Apr 2018 11:53:05 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -49,28 +49,23 @@ class NN_img_c(object):
             im_x = self.relu(self.bn2(self.conv2(im_x)))
             im_x = self.pool2(im_x)
             im_x = self.relu(self.bn3(self.conv3(im_x)))
-            im_x = self.pool3(im_x).view(n_batch, -1)
-            im_x = self.fc_img1(im_x)
+            im_x = self.pool3(im_x)
+            feature_map = im_x
+            im_x = self.fc_img1(im_x.view(n_batch, -1))
 
             # tasks
             c_x = self.relu(self.fc_c1(c))
             c_x = self.drop_c(c_x)
             c_x = self.fc_c2(c_x)
 
-            return torch.cat((im_x, c_x), 1)
+            return torch.cat((im_x, c_x), 1), feature_map
 
     def __init__(self, *args, **kwargs):
         self.model = self.Model(*args, **kwargs)
 
-    def feature_map(self, im):
-        im_x = self.relu(self.bn1(self.conv1(im)))
-        im_x = self.pool1(im_x)
-        im_x = self.relu(self.bn2(self.conv2(im_x)))
-        im_x = self.pool2(im_x)
-        im_x = self.relu(self.bn3(self.conv3(im_x)))
-        im_x = self.pool3(im_x)
-        
-        return im_x
+    def feature_map(self, im, c):
+        _, feature_map = self.model(im, c) 
+        return feature_map
 
 
 class NN_pw_zimc(object):
@@ -106,7 +101,7 @@ class NN_pw_zimc(object):
         def forward(self, z, im, c):
             n_batch = z.size(0)
 
-            condition = self.condition_net(im, c)
+            condition, _ = self.condition_net(im, c)
 
             # conditions
             z_x = self.relu(self.fc_z1(z))
@@ -171,7 +166,7 @@ class NN_pw_zimc(object):
 
 class NN_qz_w(object):
     class Model(torch.nn.Module):
-        def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k, conditon_net):
+        def __init__(self, sz_image, ch_image, n_z, tasks, dim_w, n_k, condition_net):
             super(NN_qz_w.Model, self).__init__()
             self.sz_image = sz_image
             self.ch = ch_image
@@ -202,7 +197,7 @@ class NN_qz_w(object):
         def forward(self, w, im, c):
             n_batch = w.size(0)
 
-            condition = self.condition_net(im, c)
+            condition, _ = self.condition_net(im, c)
 
             # w
             w_x = self.relu(self.fc_w1(w.view(n_batch, -1)))

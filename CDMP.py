@@ -70,7 +70,7 @@ class CMP(object):
                     torch.autograd.Variable(batch_im)
 
         optim = torch.optim.Adam(
-            list(self.decoder.model.parameters()) + list(self.encoder.model.parameters()), list(self.condition_net.model.parameters()))
+            list(self.decoder.model.parameters()) + list(self.encoder.model.parameters()) + list(self.condition_net.model.parameters()))
         loss = []
         for epoch in range(self.cfg.epochs):
             self.encoder.model.train()
@@ -168,7 +168,7 @@ class CMP(object):
         env = self.cfg.env(self.cfg)
         img = env.display(tauo, imo, cls, interactive=True)
         img_gt = env.display(tau, imo, cls, interactive=True)
-        feature = self.condition_net.feature_map(im).data.cpu().numpy()
+        feature = self.condition_net.feature_map(im, c).data.cpu().numpy()
         return img, img_gt, feature  
 
 
