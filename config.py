@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 08:06:11 PM CST
+# Last Modified : Wed 11 Apr 2018 08:45:19 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -30,7 +30,7 @@ class Config(object):
         self.generator_test = batch_test    # function pointer
         self.env = Env                      # class pointer
         # training properties
-        self.batch_size_train = 1600         # n_batch
+        self.batch_size_train = 2048         # n_batch
         self.batch_size_test = 6
         self.batches_train = 100
         self.epochs = 100
@@ -42,8 +42,8 @@ class Config(object):
         self.multi_threads = 4
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Ten_Point_Reacher_finalenv_1600"
-        self.gpu=3
+        self.experiment_name = "Ten_Point_Reacher_finalenv_2048"
+        self.gpu=0
 
 
 if __name__ == '__main__':
