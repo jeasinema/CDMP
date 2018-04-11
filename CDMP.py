@@ -179,9 +179,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # from env import Env
     # env = Env(Config())
     # for i in range(10):
-    #     batch = (env.sample() for j in range(6))
+    #     batch = (env.sample(task_id=0, im_id=list(range(10))) for j in range(6))
     #     batch = tuple(zip(*batch))
     #     env.display(batch[0], batch[2], batch[1], interactive=True)
     #     plt.pause(3)
