@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 02:01:11 PM CST
+# Last Modified : Wed 11 Apr 2018 02:48:18 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -24,7 +24,7 @@ class Env(object):
                        (-.6, 0.),                            (.6, 0.),
                        (-.6, -.75), (-.2, -.75), (.2, -.75), (.6, -.75))
         self.color = ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.), (0., 0., 0.), (1., 1., 0.),
-                      (0., 1., 1.), (1., 0., 1.), (1., .75, 0.), (.75, 0., 1.), (0., 1., .75))
+                      (0., 1., 1.), (1., 0., 1.), (1., .5, 0.), (.5, 0., 1.), (0., 1., .5))
         self.traj_mean = tuple(np.vstack([self.center[i][0] * t, self.center[i][1] * t ** .5]).T
                                for i in range(self.cfg.number_of_tasks))
 
