@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 09:09:51 PM CST
+# Last Modified : Wed 11 Apr 2018 09:42:07 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -136,12 +136,12 @@ class NN_pw_zimc(object):
     def log_prob(self, w, z, im_c):
         if len(z.size()) == len(c.size()) + 1:
             m = z.size(0)
-            mean, logvar = self.forward(
+            mean, logvar = self.model.forward(
                 z.view(-1, z.size(-1)), im_c.repeat(m, 1))
             dist = torch.distributions.Normal(mean, torch.exp(logvar))
             return dist.log_prob(w.repeat(m, 1, 1)).view(m, *w.size()).sum(-1).sum(-1).mean()
         else:
-            mean, logvar = self.forward(z, im_c)
+            mean, logvar = self.model.forward(z, im_c)
             dist = torch.distributions.Normal(mean, torch.exp(logvar))
             return dist.log_prob(w).sum(-1).sum(-1)
 
@@ -151,11 +151,11 @@ class NN_pw_zimc(object):
     def mse_error(self, w, z, im_c):
         if len(z.size()) == len(im_c.size()) + 1:
             m = z.size(0)
-            mean, _ = self.forward(
+            mean, _ = self.model.forward(
                 z.view(-1, z.size(-1)), im_c.repeat(m, 1))
             return ((w.repeat(m, 1, 1) - mean)**2).view(m, *w.size()).sum(-1).sum(-1).mean()
         else:
-            mean, logvar = self.forward(z, im_c)
+            mean, logvar = self.model.forward(z, im_c)
             dist = torch.distributions.Normal(mean, torch.exp(logvar))
             return ((w - mean)**2).sum(-1).sum(-1)
 
@@ -240,8 +240,8 @@ class NN_qz_w(object):
             # for diagonal v, Dkl(p||q) = 0.5*(sum(log(v2[i])-log(v1[i])+v1[i]/v2[i]+(u1[i]-u2[i])**2/v2[i]-1))
             return (logvar2 - logvar1 + (torch.exp(logvar1)**2 + (mean1 - mean2)**2) / (2 * torch.exp(logvar2)**2) - 1 / 2).sum(-1)
 
-        mean, logvar = self.forward(w, im_c)
-        if next(self.fc1.parameters()).is_cuda:
+        mean, logvar = self.model.forward(w, im_c)
+        if mean.is_cuda:
             mean_t, logvar_t = torch.zeros_like(mean).cuda(
             ).detach(), torch.zeros_like(logvar).cuda().detach()
         else:
