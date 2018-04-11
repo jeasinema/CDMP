@@ -10,6 +10,7 @@
 
 def bar(current, total, prefix="", suffix="", bar_sz=25, end_string=None):
     sp = ""
+    print("\x1b[2K\r", end='')
     for i in range(bar_sz):
         if current * bar_sz // total > i:
             sp += '='
@@ -19,18 +20,14 @@ def bar(current, total, prefix="", suffix="", bar_sz=25, end_string=None):
             sp += ' '
     if current == total:
         if end_string is None:
-            print("\r                                                                                              "
-                  "\r%s[%s]%s" % (prefix, sp, suffix))
+            print("\r%s[%s]%s" % (prefix, sp, suffix))
         else:
             if end_string != "":
-                print("\r                                                                                          "
-                      "\r%s" % end_string)
+                print("\r%s" % end_string)
             else:
-                print("\r                                                                                          "
-                      "\r", end='')
+                print("\r", end='')
     else:
-        print("\r                                                                                                  "
-              "\r%s[%s]%s" % (prefix, sp, suffix), end='')
+        print("\r%s[%s]%s" % (prefix, sp, suffix), end='')
 
 
 # generator: (traj, task, image) x batch_size
