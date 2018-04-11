@@ -9,25 +9,38 @@ from config import Config
 from utils import bar
 from rbf import RBF
 from model import *
+from tensorboard_logging import Logger
+from colorize import *
 
+cfg = Config()
+logger = Logger(os.path.join(cfg.log_path, cfg.experiment_name))
+torch.cuda.set_device(cfg.gpu)
 
 class CMP(object):
     def __init__(self, config):
         self.cfg = config
+        self.condition_net = NN_img_c(sz_image=self.cfg.image_size,
+                                      ch_image=self.cfg.image_channels,
+                                      tasks=self.cfg.number_of_tasks)
         self.encoder = NN_qz_w(n_z=self.cfg.number_of_hidden,
+                               ch_image=self.cfg.image_channels,
+                               sz_image=self.cfg.image_size,
+                               tasks=self.cfg.number_of_tasks,
                                dim_w=self.cfg.trajectory_dimension,
-                               n_k=self.cfg.number_of_MP_kernels)
+                               n_k=self.cfg.number_of_MP_kernels,
+                               condition_net=self.condition_net)
         self.decoder = NN_pw_zimc(sz_image=self.cfg.image_size,
                                   ch_image=self.cfg.image_channels,
                                   n_z=self.cfg.number_of_hidden,
                                   tasks=self.cfg.number_of_tasks,
                                   dim_w=self.cfg.trajectory_dimension,
-                                  n_k=self.cfg.number_of_MP_kernels)
+                                  n_k=self.cfg.number_of_MP_kernels,
+                                  condition_net=self.condition_net)
         self.use_gpu = (self.cfg.use_gpu and torch.cuda.is_available())
         if self.use_gpu:
-            print("Use GPU for training, all parameters will move to GPU 0")
-            self.encoder.cuda(0)
-            self.decoder.cuda(0)
+            print("Use GPU for training, all parameters will move to GPU {}".format(self.cfg.gpu))
+            self.encoder.cuda()
+            self.decoder.cuda()
 
         # TODO: loading from check points
 
@@ -60,19 +73,24 @@ class CMP(object):
         loss = []
         for epoch in range(self.cfg.epochs):
             avg_loss = []
+            avg_loss_de = []
+            avg_loss_ee = []
             for i, batch in enumerate(self.cfg.generator_train(self.cfg)):
                 w, c, im = batchToVariable(batch)
                 optim.zero_grad()
                 z = self.encoder.sample(
-                    w, samples=self.cfg.number_of_oversample, reparameterization=True)
+                    w, im, c, samples=self.cfg.number_of_oversample, reparameterization=True)
                 de = self.decoder.mse_error(w, z, im, c).mean()
-                ee = self.encoder.Dkl(w).mean()
+                ee = self.encoder.Dkl(w, im, c).mean()
                 l = de + ee
                 l.backward()
                 optim.step()
 
                 avg_loss.append(l.data[0])
+                avg_loss_de.append(de.data[0])
+                avg_loss_ee.append(ee.data[0])
 
+                print('\b')
                 bar(i + 1, self.cfg.batches_train, "Epoch %d/%d: " % (epoch + 1, self.cfg.epochs),
                     " | D-Err=%f; E-Err=%f" % (de.data[0], ee.data[0]), end_string='')
 
@@ -80,6 +98,9 @@ class CMP(object):
                 if i + 1 >= self.cfg.batches_train:
                     loss.append(sum(avg_loss) / len(avg_loss))
                     print("Epoch=%d, Average Loss=%f" % (epoch + 1, loss[-1]))
+                    logger.log_scalar('loss', sum(avg_loss)/len(avg_loss), epoch)
+                    logger.log_scalar('loss_de', sum(avg_loss_de)/len(avg_loss_de), epoch)
+                    logger.log_scalar('loss_ee', sum(avg_loss_ee)/len(avg_loss_ee), epoch)
                     break
             if (epoch % self.cfg.save_interval == 0 and epoch != 0) or\
                     (self.cfg.save_interval <= 0 and loss[-1] == min(loss)):
@@ -96,7 +117,17 @@ class CMP(object):
                 torch.save(net_param, check_point_file)
                 print("Check point saved @ %s" % check_point_file)
             if epoch != 0 and epoch % self.cfg.display_interval == 0:
-                self.test()
+                img, img_gt, feature = self.test()
+                feature = feature.transpose([0,2,3,1]).sum(axis=-1, keepdims=True)
+                h = feature.shape[1]*12
+                heatmap = np.zeros((h*2 + 20*3, h*3 + 20*4, 3), 
+                        dtype=np.uint8)
+                for ind in range(feature.shape[0]):
+                    heatmap[(ind//3)*(h+20)+20:(ind//3)*(h+20)+20+h, 
+                            (ind%3)*(h+20)+20:(ind%3)*(h+20)+20+h, :] = colorize(feature[ind, ...], 12)
+                logger.log_images('test_img', img, epoch)
+                logger.log_images('heatmap', heatmap, epoch)
+                logger.log_images('test_img_gt', img_gt, epoch)
 
     # generator: (task_id, img) x n_batch
     def test(self):
@@ -126,12 +157,13 @@ class CMP(object):
                 for wo in self.decoder.sample(z, im, c).cpu().data.numpy())
         tau, cls, imo = tuple(zip(*batch))
         env = self.cfg.env(self.cfg)
-        env.display(tauo, imo, cls, interactive=True)
-        # env.display(tau, imo, cls, interactive=True)
+        img = env.display(tauo, imo, cls, interactive=True)
+        img_gt = env.display(tau, imo, cls, interactive=True)
+        feature = self.condition_net.feature_map(im).data.cpu().numpy()
+        return img, img_gt, feature  
 
 
 def main():
-    cfg = Config()
     alg = CMP(config=cfg)
     alg.train()
     alg.test()

@@ -4,10 +4,10 @@ License: Copyleft
 """
 __author__ = "Michael Gygli"
 
-import matplotlib.pyplot as plt
 import tensorflow as tf
-from io import StringIO
+from PIL import Image
 import numpy as np
+from io import BytesIO
 
 
 class Logger(object):
@@ -32,25 +32,26 @@ class Logger(object):
                                                      simple_value=value)])
         self.writer.add_summary(summary, step)
 
-    def log_images(self, tag, images, step):
+    def log_images(self, tag, image, step):
         """Logs a list of images."""
 
-        im_summaries = []
-        for nr, img in enumerate(images):
-            # Write the image to a string
-            s = StringIO()
-            plt.imsave(s, img, format='png')
+        height, width, channel = image.shape
+        image = Image.fromarray(image)
+        output = BytesIO()
+        image.save(output, format='PNG')
+        image_string = output.getvalue()
+        output.close()
 
-            # Create an Image object
-            img_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
-                                       height=img.shape[0],
-                                       width=img.shape[1])
-            # Create a Summary value
-            im_summaries.append(tf.Summary.Value(tag='%s/%d' % (tag, nr),
-                                                 image=img_sum))
+        # Create an Image object
+        img_sum = tf.Summary.Image(height=height,
+                         width=width,
+                         colorspace=channel,
+                         encoded_image_string=image_string)
+        # Create a Summary value
+        im_summary = tf.Summary.Value(tag='%s' % (tag), image=img_sum)
 
         # Create and write Summary
-        summary = tf.Summary(value=im_summaries)
+        summary = tf.Summary(value=[im_summary])
         self.writer.add_summary(summary, step)
 
     def log_histogram(self, tag, values, step, bins=1000):

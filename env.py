@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月10日 星期二 14时29分38秒
+# Last Modified : Wed 11 Apr 2018 10:45:02 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from utils import *
+from rbf import RBF
 
 
 class Env(object):
@@ -50,15 +51,15 @@ class Env(object):
                 traj_id = i
                 break
 
-        tau = self.traj_mean[traj_id]
-        tau += np.random.normal(0., 0.025, tau.shape) * \
-            np.expand_dims(np.sin(self.t * np.pi), 1)
+        tau = RBF.calculate(self.traj_mean[traj_id], 20)
+        tau += np.random.normal(0., 0.1) * np.expand_dims(np.sin(np.linspace(0, 1, 20) * np.pi), 1)
+        tau = RBF.generate(tau, self.cfg.number_time_samples)
         im = np.ones(self.cfg.image_size +
                      (self.cfg.image_channels,), np.float32)
         for i in range(self.cfg.number_of_tasks):
             x, y = self.__remap_data_to_image(*self.center[i])
-            cv2.rectangle(im, (int(x - 2), int(y - 2)), (int(x + 2),
-                                                         int(y + 2)), self.color[im_id[i]], cv2.FILLED)
+            cv2.rectangle(im, (int(x - 5), int(y - 5)), (int(x + 5),
+                                                         int(y + 5)), self.color[im_id[i]], cv2.FILLED)
         return tau, task_id, im
 
     def display(self, tau, im, c=None, interactive=False):
@@ -72,6 +73,7 @@ class Env(object):
                 tau = tau[0]
                 c = c[0]
 
+            fig = plt.figure()
             plt.imshow(im)
             plt.plot(*self.__remap_data_to_image(tau[:, 0], tau[:, 1]))
             plt.xticks([])
@@ -129,7 +131,9 @@ class Env(object):
             plt.pause(0.01)
         else:
             plt.show()
-
+        img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+        img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+        return img
 
 if __name__ == '__main__':
     pass
