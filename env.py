@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 01:39:06 PM CST
+# Last Modified : Wed 11 Apr 2018 02:01:11 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -51,7 +51,7 @@ class Env(object):
 
         tau = self.traj_mean[traj_id]
         tau += np.random.normal(0., 0.025) * np.expand_dims(np.sin(np.linspace(0, 1, tau.shape[0]) * np.pi), 1)
-        im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.uint8)
+        im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.float32)
         for i in range(self.cfg.number_of_tasks):
             x, y = self.__remap_data_to_image(*self.center[i])
             cv2.rectangle(im, (int(x - 5), int(y - 5)), (int(x + 5), int(y + 5)), self.color[im_id[i]], cv2.FILLED)

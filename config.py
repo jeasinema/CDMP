@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 01:39:55 PM CST
+# Last Modified : Wed 11 Apr 2018 02:01:59 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -18,7 +18,7 @@ class Config(object):
         self.trajectory_dimension = 2       # n_dim
         self.image_size = (100, 100)        # sz_im
         self.image_x_range = (-1., 1.)
-        self.image_y_range = (0., 1.)
+        self.image_y_range = (-1., 1.)
         self.image_channels = 3             # ch_im
         self.number_of_hidden = 16          # n_z
         self.number_of_MP_kernels = 10      # n_k
@@ -41,8 +41,8 @@ class Config(object):
         self.multi_threads = 4
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Four_Point_Reacher_newenv"
-        self.gpu=3
+        self.experiment_name = "Four_Point_Reacher_newenvt2"
+        self.gpu=0
 
 
 if __name__ == '__main__':
