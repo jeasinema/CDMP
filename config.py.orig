@@ -5,10 +5,10 @@
 # Purpose :
 # Creation Date : 09-04-2018
 <<<<<<< HEAD
-# Last Modified : Wed 11 Apr 2018 03:54:16 PM CST
+# Last Modified : Wed 11 Apr 2018 05:18:33 PM CST
 =======
-# Last Modified : 2018年04月11日 星期三 16时04分22秒
->>>>>>> dev_slim
+# Last Modified : Wed 11 Apr 2018 05:21:21 PM CST
+>>>>>>> dev_new_env
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -28,16 +28,13 @@ class Config(object):
         self.number_of_MP_kernels = 10      # n_k
         self.number_time_samples = 100      # n_t
         self.number_of_oversample = 10      # n_oversample
+        self.trajectory_variance = 0.05
         # data loader
         self.generator_train = batch_train  # function pointer
         self.generator_test = batch_test    # function pointer
         self.env = Env                      # class pointer
         # training properties
-<<<<<<< HEAD
         self.batch_size_train = 160         # n_batch
-=======
-        self.batch_size_train = 100         # n_batch
->>>>>>> dev_slim
         self.batch_size_test = 6
         self.batches_train = 100
         self.epochs = 100
@@ -54,9 +51,9 @@ class Config(object):
         self.device_id=[0,2,3]
         self.gpu=3
 =======
-        self.experiment_name = "Four_Point_Reacher_newenvt_fixtask"
+        self.experiment_name = "Four_Point_Reacher_newenv3"
         self.gpu=0
->>>>>>> dev_slim
+>>>>>>> dev_new_env
 
 
 if __name__ == '__main__':

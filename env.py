@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 05:18:44 PM CST
+# Last Modified : Wed 11 Apr 2018 06:09:27 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -49,8 +49,11 @@ class Env(object):
                 traj_id = i
                 break
 
-        tau = self.traj_mean[traj_id].copy()
-        tau += np.random.normal(0., 0.025) * np.expand_dims(np.sin(np.linspace(0, 1, tau.shape[0]) * np.pi), 1)
+        tau_mean = self.traj_mean[traj_id]
+        noise = np.random.normal(0., self.cfg.trajectory_variance) * np.sin(np.linspace(0, 1, tau_mean.shape[0]) * np.pi)
+        noise_dir = np.asarray((-(tau_mean[-1] - tau_mean[0])[1], (tau_mean[-1] - tau_mean[0])[0]), dtype=np.float32)
+        noise_dir /= np.linalg.norm(noise_dir)
+        tau = tau_mean + noise_dir.reshape(1, 2) * noise.reshape(tau_mean.shape[0], 1)
         im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.float32)
         for i in range(self.cfg.number_of_tasks):
             x, y = self.__remap_data_to_image(*self.center[i])
