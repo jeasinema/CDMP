@@ -11,7 +11,6 @@ from rbf import RBF
 from model import *
 from colorize import *
 from tensorboardX import SummaryWriter
-# from tensorboard_logging import Logger
  
 cfg = Config()
 logger = SummaryWriter(os.path.join(cfg.log_path, cfg.experiment_name))
