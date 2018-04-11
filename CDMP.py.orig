@@ -121,12 +121,21 @@ class CMP(object):
                 h = feature.shape[1]*12 # CNN factor
                 heatmap = np.zeros((h*2 + 20*3, h*3 + 20*4, 3),  # output 2*3
                         dtype=np.uint8)
+<<<<<<< HEAD
                 for ind in range(feature.shape[0]):
                     heatmap[(ind//3)*(h+20)+20:(ind//3)*(h+20)+20+h, 
                             (ind%3)*(h+20)+20:(ind%3)*(h+20)+20+h, :] = colorize(feature[ind, ...], 12)
                 logger.log_images('test_img', img, epoch)
                 logger.log_images('heatmap', heatmap, epoch)
                 logger.log_images('test_img_gt', img_gt, epoch)
+=======
+                # for ind in range(feature.shape[0]):
+                #     heatmap[(ind//3)*(h+20)+20:(ind//3)*(h+20)+20+h, 
+                #             (ind%3)*(h+20)+20:(ind%3)*(h+20)+20+h, :] = colorize(feature[ind, ...], 12)
+                # logger.log_images('test_img', img, epoch)
+                # logger.log_images('heatmap', heatmap, epoch)
+                # logger.log_images('test_img_gt', img_gt, epoch)
+>>>>>>> dev_new_env
 
     # generator: (task_id, img) x n_batch
     def test(self):
