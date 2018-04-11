@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Wed 11 Apr 2018 11:04:08 AM CST
+# Last Modified : Wed 11 Apr 2018 03:08:54 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -19,16 +19,14 @@ class Env(object):
     def __init__(self, config):
         self.cfg = config
 
-        self.t = np.linspace(
-            0, 1, self.cfg.number_time_samples, dtype=np.float32)
-        self.center = ((-0.75, 0.75), (-0.3, 0.75), (0.3, 0.75), (0.75, 0.75))
-        self.color = ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.), (0., 0., 0.))
-        self.traj_mean = (np.vstack([self.center[0][0] * self.t, self.center[0][1] * self.t ** .5]).T,
-                          np.vstack([self.center[1][0] * self.t,
-                                     self.center[1][1] * self.t ** .5]).T,
-                          np.vstack([self.center[2][0] * self.t,
-                                     self.center[2][1] * self.t ** .5]).T,
-                          np.vstack([self.center[3][0] * self.t, self.center[3][1] * self.t ** .5]).T)
+        t = np.linspace(0, 1, self.cfg.number_time_samples, dtype=np.float32)
+        self.center = ((-.6, .75),  (-.2, .75),  (.2, .75),  (.6, .75),
+                       (-.6, 0.),                            (.6, 0.),
+                       (-.6, -.75), (-.2, -.75), (.2, -.75), (.6, -.75))
+        self.color = ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.), (0., 0., 0.), (1., 1., 0.),
+                      (0., 1., 1.), (1., 0., 1.), (1., .5, 0.), (.5, 0., 1.), (0., 1., .5))
+        self.traj_mean = tuple(np.vstack([self.center[i][0] * t, self.center[i][1] * t ** .5]).T
+                               for i in range(self.cfg.number_of_tasks))
 
     # remap x[-1, 1], y[0, 1] to image coordinate
     def __remap_data_to_image(self, x, y):
@@ -43,7 +41,7 @@ class Env(object):
         if task_id is None:
             task_id = np.random.randint(0, self.cfg.number_of_tasks)
         if im_id is None:
-            im_id = list(range(4))
+            im_id = list(range(self.cfg.number_of_tasks))
             np.random.shuffle(im_id)
         traj_id = 0
         for i in range(self.cfg.number_of_tasks):
@@ -51,15 +49,15 @@ class Env(object):
                 traj_id = i
                 break
 
-        tau = RBF.calculate(self.traj_mean[traj_id], 20)
-        tau += np.random.normal(0., 0.1) * np.expand_dims(np.sin(np.linspace(0, 1, 20) * np.pi), 1)
-        tau = RBF.generate(tau, self.cfg.number_time_samples)
-        im = np.ones(self.cfg.image_size +
-                     (self.cfg.image_channels,), np.float32)
+        tau = self.traj_mean[traj_id]
+        tau += np.random.normal(0., 0.025) * np.expand_dims(np.sin(np.linspace(0, 1, tau.shape[0]) * np.pi), 1)
+        im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.float32)
         for i in range(self.cfg.number_of_tasks):
             x, y = self.__remap_data_to_image(*self.center[i])
-            cv2.rectangle(im, (int(x - 5), int(y - 5)), (int(x + 5),
-                                                         int(y + 5)), self.color[im_id[i]], cv2.FILLED)
+            cv2.rectangle(im, (int(x - 5), int(y - 5)), (int(x + 5), int(y + 5)), self.color[im_id[i]], cv2.FILLED)
+            txsz, baseline = cv2.getTextSize(str(im_id[i]), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.3, 1)
+            pos = int(x - txsz[0] // 2), int(y + txsz[1] // 2)
+            cv2.putText(im, str(im_id[i]), pos, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.3, (.6, .6, .6), 1)
         return tau, task_id, im
 
     def display(self, tau, im, c=None, interactive=False):
@@ -67,8 +65,8 @@ class Env(object):
             plt.close()
             plt.ion()
 
-        if (isinstance(im, np.ndarray) and len(im.shape) == 3) or len(im) == 1:
-            if len(im) == 1:
+        if (isinstance(tau, np.ndarray) and len(tau.shape) == 3) or len(tau) == 1:
+            if len(tau) == 1:
                 im = im[0]
                 tau = tau[0]
                 c = c[0]
@@ -82,14 +80,14 @@ class Env(object):
                 plt.title("Task_%d" % c)
 
         else:
-            if len(im) > 8:
+            if len(tau) > 8:
                 im = im[:8]
                 tau = tau[:8]
                 c = c[:8]
                 print(
                     "Warning: more then 8 samples are provided, only first 8 will be displayed")
 
-            n_batch = len(im)
+            n_batch = len(tau)
             if n_batch <= 3:
                 fig, axarr = plt.subplots(n_batch)
             elif n_batch == 4:
@@ -101,30 +99,26 @@ class Env(object):
             for w, i, t, f in zip(tau, im, c, range(n_batch)):
                 if n_batch <= 3:
                     axarr[f].imshow(i)
-                    axarr[f].plot(
-                        *self.__remap_data_to_image(w[:, 0], w[:, 1]))
+                    axarr[f].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
                     if t is not None:
                         axarr[f].set_title("Task_%d" % t)
                 elif n_batch == 4:
                     axarr[f // 2, f % 2].imshow(i)
-                    axarr[f // 2, f %
-                          2].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
+                    axarr[f // 2, f % 2].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
                     if t is not None:
                         axarr[f // 2, f % 2].set_title("Task_%d" % t)
                 elif n_batch <= 6:
                     axarr[f // 3, f % 3].set_yticklabels([])
                     axarr[f // 3, f % 3].set_xticklabels([])
                     axarr[f // 3, f % 3].imshow(i)
-                    axarr[f // 3, f %
-                          3].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
+                    axarr[f // 3, f % 3].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
                     if t is not None:
                         axarr[f // 3, f % 3].set_title("Task_%d" % t)
                 else:
                     axarr[f // 4, f % 4].set_yticklabels([])
                     axarr[f // 4, f % 4].set_xticklabels([])
                     axarr[f // 4, f % 4].imshow(i)
-                    axarr[f // 4, f %
-                          4].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
+                    axarr[f // 4, f % 4].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
                     if t is not None:
                         axarr[f // 4, f % 4].set_title("Task_%d" % t)
         if interactive:

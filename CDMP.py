@@ -10,8 +10,8 @@ from config import Config
 from utils import bar
 from rbf import RBF
 from model import *
-from tensorboard_logging import Logger
 from colorize import *
+from tensorboard_logging import Logger
 
 cfg = Config()
 logger = Logger(os.path.join(cfg.log_path, cfg.experiment_name))
@@ -94,7 +94,6 @@ class CMP(object):
                 avg_loss_de.append(de.data[0])
                 avg_loss_ee.append(ee.data[0])
 
-                print('\b')
                 bar(i + 1, self.cfg.batches_train, "Epoch %d/%d: " % (epoch + 1, self.cfg.epochs),
                     " | D-Err=%f; E-Err=%f" % (de.data[0], ee.data[0]), end_string='')
 
@@ -124,8 +123,8 @@ class CMP(object):
             if epoch != 0 and epoch % self.cfg.display_interval == 0:
                 img, img_gt, feature = self.test()
                 feature = feature.transpose([0,2,3,1]).sum(axis=-1, keepdims=True)
-                h = feature.shape[1]*12
-                heatmap = np.zeros((h*2 + 20*3, h*3 + 20*4, 3), 
+                h = feature.shape[1]*12 # CNN factor
+                heatmap = np.zeros((h*2 + 20*3, h*3 + 20*4, 3),  # output 2*3
                         dtype=np.uint8)
                 for ind in range(feature.shape[0]):
                     heatmap[(ind//3)*(h+20)+20:(ind//3)*(h+20)+20+h, 
@@ -162,7 +161,7 @@ class CMP(object):
         self.condition_net.model.eval()
         batch = next(self.cfg.generator_test(self.cfg))
         z, c, im = batchToVariable(batch)
-        tauo = (RBF.generate(wo, self.cfg.number_time_samples)
+        tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
                 for wo in self.decoder.sample(z, im, c).cpu().data.numpy())
         tau, cls, imo = tuple(zip(*batch))
         env = self.cfg.env(self.cfg)
