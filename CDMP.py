@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import cv2
 import os
 from datetime import datetime as dt
+import argparse
 
 from config import Config
 from utils import bar
@@ -12,7 +13,17 @@ from model import *
 from colorize import *
 from tensorboardX import SummaryWriter
  
-cfg = Config()
+
+parser = argparse.ArgumentParser(description='CDMP')
+parser.add_argument('--model-path', type=str, nargs='?', default='', help='load model')
+args = parser.parse_args()
+
+net_param = torch.load(args.model_path) if args.model_path else None
+
+if net_param:
+    cfg = net_param['config']
+else:
+    cfg = Config() 
 logger = SummaryWriter(os.path.join(cfg.log_path, cfg.experiment_name))
 torch.cuda.set_device(cfg.gpu)
 
@@ -34,6 +45,10 @@ class CMP(object):
                                   tasks=self.cfg.number_of_tasks,
                                   dim_w=self.cfg.trajectory_dimension,
                                   n_k=self.cfg.number_of_MP_kernels)
+        if net_param:
+            self.encoder.load_state_dict(net_param['encoder'])
+            self.decoder.load_state_dict(net_param['decoder'])
+            self.condition_net.load_state_dict(net_param['condition_net'])
         self.use_gpu = (self.cfg.use_gpu and torch.cuda.is_available())
         if self.use_gpu:
             print("Use GPU for training, all parameters will move to GPU {}".format(self.cfg.gpu))
@@ -70,7 +85,8 @@ class CMP(object):
         optim = torch.optim.Adam(
             list(self.decoder.parameters()) + list(self.encoder.parameters()))
         loss = []
-        for epoch in range(self.cfg.epochs):
+        base = net_param['epoch'] if net_param else 0
+        for epoch in range(base, self.cfg.epochs+base):
             avg_loss = []
             avg_loss_de = []
             avg_loss_ee = []
@@ -108,7 +124,8 @@ class CMP(object):
                     "config": self.cfg,
                     "loss": loss,
                     "encoder": self.encoder.state_dict(),
-                    "decoder": self.decoder.state_dict()
+                    "decoder": self.decoder.state_dict(),
+                    "condition_net": self.condition_net.state_dict()
                 }
                 os.makedirs(self.cfg.check_point_path, exist_ok=True)
                 check_point_file = os.path.join(self.cfg.check_point_path,
