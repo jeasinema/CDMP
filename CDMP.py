@@ -11,7 +11,6 @@ from utils import bar
 from rbf import RBF
 from model import *
 from colorize import *
-from weight_init import weight_init
 from tensorboardX import SummaryWriter
  
 
@@ -50,10 +49,6 @@ class CMP(object):
             self.encoder.load_state_dict(g_net_param['encoder'])
             self.decoder.load_state_dict(g_net_param['decoder'])
             self.condition_net.load_state_dict(g_net_param['condition_net'])
-        else:
-            self.encoder.apply(weight_init)
-            self.decoder.apply(weight_init)
-            self.condition_net.apply(weight_init)
         self.use_gpu = (self.cfg.use_gpu and torch.cuda.is_available())
         if self.use_gpu:
             print("Use GPU for training, all parameters will move to GPU {}".format(self.cfg.gpu))
