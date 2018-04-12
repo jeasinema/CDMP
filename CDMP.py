@@ -7,10 +7,11 @@ from datetime import datetime as dt
 import argparse
 
 from config import Config
-from utils import bar, weight_init
+from utils import bar
 from rbf import RBF
 from model import *
 from colorize import *
+from weight_init import weight_init
 from tensorboardX import SummaryWriter
  
 
@@ -50,12 +51,9 @@ class CMP(object):
             self.decoder.load_state_dict(g_net_param['decoder'])
             self.condition_net.load_state_dict(g_net_param['condition_net'])
         else:
-            for param in self.decoder.parameters():
-                weight_init(param)
-            for param in self.encoder.parameters():
-                weight_init(param)
-            for param in self.condition_net.parameters():
-                weight_init(param)
+            self.encoder.apply(weight_init)
+            self.decoder.apply(weight_init)
+            self.condition_net.apply(weight_init)
         self.use_gpu = (self.cfg.use_gpu and torch.cuda.is_available())
         if self.use_gpu:
             print("Use GPU for training, all parameters will move to GPU {}".format(self.cfg.gpu))

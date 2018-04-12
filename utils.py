@@ -4,7 +4,7 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Thu 12 Apr 2018 02:25:41 PM CST
+# Last Modified : Thu 12 Apr 2018 10:19:23 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch.nn as nn
@@ -31,10 +31,6 @@ def bar(current, total, prefix="", suffix="", bar_sz=25, end_string=None):
                 print("\r", end='')
     else:
         print("\r%s[%s]%s" % (prefix, sp, suffix), end='')
-
-
-def weight_init(param):
-    pass 
 
 
 # generator: (traj, task, image) x batch_size
