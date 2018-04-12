@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Thu 12 Apr 2018 01:25:44 PM CST
+# Last Modified : Thu 12 Apr 2018 02:37:37 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -42,7 +42,7 @@ class Config(object):
         self.multi_threads = 4
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Ten_Point_Reacher_finalenv_256_16"
+        self.experiment_name = "Ten_Point_Reacher_6task_256_16"
         self.gpu=2
 
 if __name__ == '__main__':
