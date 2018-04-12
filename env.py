@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Thu 12 Apr 2018 10:25:31 PM CST
+# Last Modified : Thu 12 Apr 2018 10:29:47 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -39,7 +39,8 @@ class Env(object):
     # return tau, task_id, im
     def sample(self, task_id=None, im_id=None):
         if task_id is None:
-            task_id = np.random.randint(0, self.cfg.number_of_tasks)
+            # task_id = np.random.randint(0, self.cfg.number_of_tasks)
+            task_id = np.random.randint(0, 4)
         if im_id is None:
             im_id = list(range(self.cfg.number_of_tasks))
             np.random.shuffle(im_id)
