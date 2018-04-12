@@ -4,8 +4,11 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Thu 12 Apr 2018 01:43:25 PM CST
+# Last Modified : Thu 12 Apr 2018 10:26:15 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
+
+import torch.nn as nn
+import torch.nn.init as init
 
 
 def bar(current, total, prefix="", suffix="", bar_sz=25, end_string=None):
