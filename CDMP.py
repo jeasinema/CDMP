@@ -19,14 +19,13 @@ parser = argparse.ArgumentParser(description='CDMP')
 parser.add_argument('--model-path', type=str, nargs='?', default='', help='load model')
 args = parser.parse_args()
 
-net_param = torch.load(args.model_path) if args.model_path else None
+g_net_param = torch.load(args.model_path) if args.model_path else None
 
-if net_param:
-    cfg = net_param['config']
+if g_net_param:
+    cfg = g_net_param['config']
 else:
     cfg = Config() 
 logger = SummaryWriter(os.path.join(cfg.log_path, cfg.experiment_name))
-torch.cuda.set_device(cfg.gpu)
 
 class CMP(object):
     def __init__(self, config):
@@ -46,10 +45,10 @@ class CMP(object):
                                   tasks=self.cfg.number_of_tasks,
                                   dim_w=self.cfg.trajectory_dimension,
                                   n_k=self.cfg.number_of_MP_kernels)
-        if net_param:
-            self.encoder.load_state_dict(net_param['encoder'])
-            self.decoder.load_state_dict(net_param['decoder'])
-            self.condition_net.load_state_dict(net_param['condition_net'])
+        if g_net_param:
+            self.encoder.load_state_dict(g_net_param['encoder'])
+            self.decoder.load_state_dict(g_net_param['decoder'])
+            self.condition_net.load_state_dict(g_net_param['condition_net'])
         self.use_gpu = (self.cfg.use_gpu and torch.cuda.is_available())
         if self.use_gpu:
             print("Use GPU for training, all parameters will move to GPU {}".format(self.cfg.device_id))
@@ -87,7 +86,10 @@ class CMP(object):
         optim = torch.optim.Adam(
             list(self.decoder.model.parameters()) + list(self.encoder.model.parameters()) + list(self.condition_net.model.parameters()))
         loss = []
-        base = net_param['epoch'] if net_param else 0
+        if g_net_param:
+            base = g_net_param['epoch'] 
+        else:
+            base = 0
         for epoch in range(base, self.cfg.epochs+base):
             self.encoder.model.train()
             self.decoder.model.train()

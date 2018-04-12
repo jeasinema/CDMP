@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Thu 12 Apr 2018 11:32:23 AM CST
+# Last Modified : Thu 12 Apr 2018 01:46:59 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -20,10 +20,10 @@ class Config(object):
         self.image_x_range = (-1., 1.)
         self.image_y_range = (-1., 1.)
         self.image_channels = 3             # ch_im
-        self.number_of_hidden = 128          # n_z
+        self.number_of_hidden = 16          # n_z
         self.number_of_MP_kernels = 10      # n_k
         self.number_time_samples = 100      # n_t
-        self.number_of_oversample = 20      # n_oversample
+        self.number_of_oversample = 30      # n_oversample
         self.trajectory_variance = 0.05
         # data loader
         self.generator_train = batch_train  # function pointer
@@ -42,7 +42,7 @@ class Config(object):
         self.multi_threads = 4
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Four_Point_Reacher_para_newenvfixtask"
+        self.experiment_name = "Ten_Point_Reacher_para_256_16"
         self.device_id=[0,2,3]
         self.gpu=3
 
