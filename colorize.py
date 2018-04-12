@@ -4,7 +4,7 @@
 # File Name : colorize.py
 # Purpose :
 # Creation Date : 21-12-2017
-# Last Modified : Thu 21 Dec 2017 09:02:22 PM CST
+# Last Modified : Wed 11 Apr 2018 09:52:14 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 # ref: https://gist.github.com/jimfleming/c1adfdb0f526465c99409cc143dea97b
@@ -13,8 +13,6 @@ import matplotlib
 import matplotlib.cm
 import cv2
 import numpy as np
-
-import tensorflow as tf
 
 
 def colorize(value, factor=1, vmin=None, vmax=None):
@@ -89,6 +87,7 @@ def tf_colorize(value, factor=1, vmin=None, vmax=None, cmap=None):
 
     Returns a 3D tensor of shape [height, width, 3].
     """
+    import tensorflow as tf
 
     # normalize
     vmin = tf.reduce_min(value) if vmin is None else vmin
