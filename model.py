@@ -4,11 +4,51 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Thu 12 Apr 2018 01:59:04 PM CST
+# Last Modified : Sat 14 Apr 2018 02:01:54 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
+from torch.autograd import Variable
+import torch.nn.functional as F
+from torch.nn.parameter import Parameter
 import numpy as np
+
+
+class SpatialSoftmax(torch.nn.Module):
+    def __init__(self, height, width, channel, temperature=None, data_format='NCHW'):
+        super(SpatialSoftmax, self).__init__()
+        self.data_format = data_format
+        self.height = height
+        self.width = width
+        self.channel = channel
+
+        if temperature:
+            self.temperature = Parameter(torch.ones(1)*temperature)
+        else:
+            self.temperature = 1.
+
+        pos_x, pos_y = np.meshgrid(
+                np.linspace(-1., 1., self.height),
+                np.linspace(-1., 1., self.width)
+                )
+        pos_x = torch.from_numpy(pos_x.reshape(self.height*self.width)).float()
+        pos_y = torch.from_numpy(pos_y.reshape(self.height*self.width)).float()
+        self.register_buffer('pos_x', pos_x)
+        self.register_buffer('pos_y', pos_y)
+
+    def forward(self, feature):
+        if self.data_format == 'NHWC':
+            feature = feature.transpose(1, 3).tranpose(2, 3).view(-1, self.height*self.width)
+        else:
+            feature = feature.view(-1, self.height*self.width)
+        
+        softmax_attention = F.softmax(feature/self.temperature, dim=-1)
+        expected_x = torch.sum(Variable(self.pos_x)*softmax_attention, dim=1, keepdim=True)
+        expected_y = torch.sum(Variable(self.pos_y)*softmax_attention, dim=1, keepdim=True)
+        expected_xy = torch.cat([expected_x, expected_y], 1)
+        feature_keypoints = expected_xy.view(-1, self.channel*2)
+
+        return feature_keypoints
 
 
 class NN_img_c(torch.nn.Module):
@@ -19,18 +59,18 @@ class NN_img_c(torch.nn.Module):
         self.tasks = tasks
 
         # for image input
-        self.conv1 = torch.nn.Conv2d(self.ch, 16, kernel_size=3, padding=1)
-        self.pool1 = torch.nn.MaxPool2d(3)
-        self.conv2 = torch.nn.Conv2d(16, 32, kernel_size=3, padding=1)
-        self.pool2 = torch.nn.MaxPool2d(2)
-        self.conv3 = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
-        self.pool3 = torch.nn.MaxPool2d(2)
-        self.fc_img1 = torch.nn.Linear(
-            32 * (sz_image[0] // 3 // 2 // 2) * (sz_image[1] // 3 // 2 // 2), 64)
+        self.conv1 = torch.nn.Conv2d(self.ch, 64, kernel_size=4, padding=1, stride=2)
+        self.conv2 = torch.nn.Conv2d(64, 64, kernel_size=4, padding=1, stride=2)
+        self.conv3 = torch.nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.conv4 = torch.nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.conv5 = torch.nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        # self.fc_img1 = torch.nn.Linear(
+        #     32 * (sz_image[0] // 3 // 2 // 2) * (sz_image[1] // 3 // 2 // 2), 64)
+        self.spatial_softmax = SpatialSoftmax(sz_image[0] // 2 // 2, sz_image[1] // 2 // 2, 64) # (N, 32*2)
 
-        # for c input
-        self.fc_c1 = torch.nn.Linear(self.tasks, 64)
-        self.fc_c2 = torch.nn.Linear(64, 64)
+        # for merge 
+        self.fc1 = torch.nn.Linear(self.tasks + 64*2, 128)
+        self.fc2 = torch.nn.Linear(128, 128)
 
         self.relu = torch.nn.ReLU()
         self.sigmoid = torch.nn.Sigmoid()
@@ -40,27 +80,26 @@ class NN_img_c(torch.nn.Module):
 
         # image
         im_x = self.relu(self.conv1(im))
-        im_x = self.pool1(im_x)
         im_x = self.relu(self.conv2(im_x))
-        im_x = self.pool2(im_x)
         im_x = self.relu(self.conv3(im_x))
-        im_x = self.pool3(im_x).view(n_batch, -1)
-        im_x = self.fc_img1(im_x)
+        im_x = self.relu(self.conv4(im_x))
+        im_x = self.relu(self.conv5(im_x))
+        im_x = self.spatial_softmax(im_x)
+        
+        # merge 
+        im_c = torch.cat((im_x, c), 1)
+        im_c = self.relu(self.fc1(im_c))
+        im_c = self.fc2(im_c)
 
-        # tasks
-        c_x = self.relu(self.fc_c1(c))
-        c_x = self.fc_c2(c_x)
-
-        return torch.cat((im_x, c_x), 1)
+        return im_c
 
     def feature_map(self, im):
         im_x = self.relu(self.conv1(im))
-        im_x = self.pool1(im_x)
         im_x = self.relu(self.conv2(im_x))
-        im_x = self.pool2(im_x)
         im_x = self.relu(self.conv3(im_x))
-        im_x = self.pool3(im_x)
-        
+        im_x = self.relu(self.conv4(im_x))
+        im_x = self.relu(self.conv5(im_x))
+       
         return im_x
 
 
@@ -226,4 +265,12 @@ class NN_qz_w(torch.nn.Module):
 
 
 if __name__ == '__main__':
-    pass
+    from torch.autograd import Variable
+    data = Variable(torch.zeros([1,3,3,3]))
+    data[0,0,0,1] = 10
+    data[0,1,1,1] = 10
+    data[0,2,1,2] = 10
+    layer = SpatialSoftmax(3,3,3, temperature=1)
+    print(layer(data))
+
+

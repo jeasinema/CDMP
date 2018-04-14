@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Thu 12 Apr 2018 10:23:58 PM CST
+# Last Modified : Sat 14 Apr 2018 02:00:11 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -14,7 +14,7 @@ from utils import *
 class Config(object):
     def __init__(self):
         # task properties
-        self.number_of_tasks = 10          # n_c
+        self.number_of_tasks = 4          # n_c
         self.trajectory_dimension = 2       # n_dim
         self.image_size = (100, 100)        # sz_im
         self.image_x_range = (-1., 1.)
@@ -42,8 +42,8 @@ class Config(object):
         self.multi_threads = 4
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Ten_Point_Reacher_4task_256_16"
-        self.gpu=2
+        self.experiment_name = "Four_Point_Reacher_1task_256_16_spatialsoftmax_deep"
+        self.gpu=0
 
 if __name__ == '__main__':
     pass

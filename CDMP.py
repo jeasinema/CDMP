@@ -138,12 +138,12 @@ class CMP(object):
             if epoch != 0 and epoch % self.cfg.display_interval == 0:
                 img, img_gt, feature = self.test()
                 feature = feature.transpose([0,2,3,1]).sum(axis=-1, keepdims=True)
-                h = feature.shape[1]*12 # CNN factor
+                h = feature.shape[1]*4 # CNN factor
                 heatmap = np.zeros((h*2 + 20*3, h*3 + 20*4, 3),  # output 2*3
                         dtype=np.uint8)
                 for ind in range(feature.shape[0]):
                     heatmap[(ind//3)*(h+20)+20:(ind//3)*(h+20)+20+h, 
-                            (ind%3)*(h+20)+20:(ind%3)*(h+20)+20+h, :] = colorize(feature[ind, ...], 12)
+                            (ind%3)*(h+20)+20:(ind%3)*(h+20)+20+h, :] = colorize(feature[ind, ...], 4)
                 logger.add_image('test_img', img, epoch)
                 logger.add_image('heatmap', heatmap, epoch)
                 logger.add_image('test_img_gt', img_gt, epoch)
