@@ -83,7 +83,8 @@ class CMP(object):
                     torch.autograd.Variable(batch_im)
 
         optim = torch.optim.Adam(
-            list(self.decoder.parameters()) + list(self.encoder.parameters()))
+            list(self.decoder.parameters()) + list(self.encoder.parameters()) +
+            list(self.condition_net.parameters()))
         loss = []
         if g_net_param:
             base = g_net_param['epoch'] 
