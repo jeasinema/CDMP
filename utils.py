@@ -4,7 +4,7 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Sat 14 Apr 2018 01:59:53 PM CST
+# Last Modified : Mon 16 Apr 2018 02:06:36 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch.nn as nn
@@ -37,14 +37,14 @@ def bar(current, total, prefix="", suffix="", bar_sz=25, end_string=None):
 def batch_train(config):
     env = config.env(config)
     while True:
-        yield tuple(env.sample(task_id=0) for _ in range(config.batch_size_train))
+        yield tuple(env.sample() for _ in range(config.batch_size_train))
 
 
 # generator: (traj, task, image) x batch_size
 def batch_test(config):
     env = config.env(config)
     while True:
-        yield tuple(env.sample(task_id=0) for _ in range(config.batch_size_test))
+        yield tuple(env.sample() for _ in range(config.batch_size_test))
 
 
 if __name__ == '__main__':
