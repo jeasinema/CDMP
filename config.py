@@ -22,13 +22,16 @@ class Config(object):
         self.image_channels = 3             # ch_im
         self.number_of_hidden = 16          # n_z
         self.number_of_MP_kernels = 10      # n_k
-        self.number_time_samples = 100      # n_t
         self.number_of_oversample = 30      # n_oversample
         self.trajectory_variance = 0.05
         # data loader
         self.generator_train = batch_train  # function pointer
         self.generator_test = batch_test    # function pointer
+        # environment
         self.env = Env                      # class pointer
+        self.number_time_samples = 100      # n_t
+        self.trajectory_variance = 0.05
+        self.totally_random = True          # if True, target can be anywhere
         # training properties
         self.batch_size_train = 256         # n_batch
         self.batch_size_test = 6
@@ -43,7 +46,7 @@ class Config(object):
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
         self.experiment_name = "Ten_Point_Reacher_256_16_latest"
-        self.gpu=2
+        self.gpu=0
 
 if __name__ == '__main__':
     pass

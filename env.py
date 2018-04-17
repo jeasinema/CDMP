@@ -19,14 +19,11 @@ class Env(object):
     def __init__(self, config):
         self.cfg = config
 
-        t = np.linspace(0, 1, self.cfg.number_time_samples, dtype=np.float32)
         self.center = ((-.6, .75),  (-.2, .75),  (.2, .75),  (.6, .75),
                        (-.6, 0.),                            (.6, 0.),
                        (-.6, -.75), (-.2, -.75), (.2, -.75), (.6, -.75))
         self.color = ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.), (0., 0., 0.), (1., 1., 0.),
                       (0., 1., 1.), (1., 0., 1.), (1., .5, 0.), (.5, 0., 1.), (0., 1., .5))
-        self.traj_mean = tuple(np.vstack([self.center[i][0] * t, self.center[i][1] * t ** .5]).T
-                               for i in range(self.cfg.number_of_tasks))
 
     # remap x[-1, 1], y[0, 1] to image coordinate
     def __remap_data_to_image(self, x, y):
@@ -48,15 +45,29 @@ class Env(object):
             if task_id == im_id[i]:
                 traj_id = i
                 break
+        if self.cfg.totally_random:
+            center = []
+            p_i = list(range((self.cfg.image_size[0] // 10) * (self.cfg.image_size[1] // 10)))
+            np.random.shuffle(p_i)
+            p_i = p_i[3: 3+self.cfg.number_of_tasks]
+            for p in p_i:
+                x = (p // (self.cfg.image_size[1] // 10)) * 10. + 5.
+                y = (p % (self.cfg.image_size[1] // 10)) * 10. + 5.
+                x = (x / self.cfg.image_size[0]) * (self.cfg.image_x_range[1] - self.cfg.image_x_range[0]) + self.cfg.image_x_range[0]
+                y = (y / self.cfg.image_size[1]) * (self.cfg.image_y_range[1] - self.cfg.image_y_range[0]) + self.cfg.image_y_range[0]
+                center.append(np.asarray((x, y), dtype=np.float32))
+        else:
+            center = self.center
 
-        tau_mean = self.traj_mean[traj_id]
-        noise = np.random.normal(0., self.cfg.trajectory_variance) * np.sin(np.linspace(0, 1, tau_mean.shape[0]) * np.pi)
+        t = np.linspace(0, 1, self.cfg.number_time_samples, dtype=np.float32)
+        tau_mean = np.vstack([center[traj_id][0] * t, center[traj_id][1] * t ** .5]).T
+        noise = np.random.normal(0., self.cfg.trajectory_variance) * np.sin(t * np.pi)
         noise_dir = np.asarray((-(tau_mean[-1] - tau_mean[0])[1], (tau_mean[-1] - tau_mean[0])[0]), dtype=np.float32)
         noise_dir /= np.linalg.norm(noise_dir)
         tau = tau_mean + noise_dir.reshape(1, 2) * noise.reshape(tau_mean.shape[0], 1)
         im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.float32)
         for i in range(self.cfg.number_of_tasks):
-            x, y = self.__remap_data_to_image(*self.center[i])
+            x, y = self.__remap_data_to_image(*center[i])
             cv2.rectangle(im, (int(x - 5), int(y - 5)), (int(x + 5), int(y + 5)), self.color[im_id[i]], cv2.FILLED)
             txsz, baseline = cv2.getTextSize(str(im_id[i]), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.3, 1)
             pos = int(x - txsz[0] // 2), int(y + txsz[1] // 2)
