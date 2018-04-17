@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Sat 14 Apr 2018 02:01:54 PM CST
+# Last Modified : Tue 17 Apr 2018 08:25:35 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -38,7 +38,7 @@ class SpatialSoftmax(torch.nn.Module):
 
     def forward(self, feature):
         if self.data_format == 'NHWC':
-            feature = feature.transpose(1, 3).tranpose(2, 3).view(-1, self.height*self.width)
+            feature = feature.permute(0,2,3,1).view(-1, self.height*self.width)
         else:
             feature = feature.view(-1, self.height*self.width)
         
