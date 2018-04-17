@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Tue 17 Apr 2018 07:10:46 PM CST
+# Last Modified : Tue 17 Apr 2018 11:05:54 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import Env
@@ -16,11 +16,11 @@ class Config(object):
         # task properties
         self.number_of_tasks = 10          # n_c
         self.trajectory_dimension = 2       # n_dim
-        self.image_size = (100, 100)        # sz_im
+        self.image_size = (224, 224)        # sz_im
         self.image_x_range = (-1., 1.)
         self.image_y_range = (-1., 1.)
         self.image_channels = 3             # ch_im
-        self.number_of_hidden = 16          # n_z
+        self.number_of_hidden = 128          # n_z
         self.number_of_MP_kernels = 10      # n_k
         self.number_of_oversample = 30      # n_oversample
         self.trajectory_variance = 0.05
@@ -45,8 +45,8 @@ class Config(object):
         self.multi_threads = 4
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Ten_Point_Reacher_256_16_spatialsoftmax_deep"
-        self.gpu=0
+        self.experiment_name = "Ten_Point_Reacher_256_128_spatialsoftmax_random_224"
+        self.gpu=3
 
 if __name__ == '__main__':
     pass
