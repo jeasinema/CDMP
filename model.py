@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Tue 17 Apr 2018 08:25:35 PM CST
+# Last Modified : Tue 17 Apr 2018 11:31:34 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
