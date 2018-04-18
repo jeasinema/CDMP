@@ -66,6 +66,7 @@ class Env(object):
         noise_dir /= np.linalg.norm(noise_dir)
         tau = tau_mean + noise_dir.reshape(1, 2) * noise.reshape(tau_mean.shape[0], 1)
         im = np.ones(self.cfg.image_size+(self.cfg.image_channels,), np.float32)
+        im = im - np.random.rand(*im.shape) * 0.1
         for i in range(self.cfg.number_of_tasks):
             x, y = self.__remap_data_to_image(*center[i])
             cv2.rectangle(im, (int(x - 5), int(y - 5)), (int(x + 5), int(y + 5)), self.color[im_id[i]], cv2.FILLED)
