@@ -4,11 +4,14 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Mon 16 Apr 2018 02:06:36 AM CST
+# Last Modified : Thu 19 Apr 2018 11:44:35 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
+import torch
 import torch.nn as nn
 import torch.nn.init as init
+import torch.utils.data as data
+import numpy as np
 
 
 def bar(current, total, prefix="", suffix="", bar_sz=25, end_string=None):
@@ -33,18 +36,39 @@ def bar(current, total, prefix="", suffix="", bar_sz=25, end_string=None):
         print("\r%s[%s]%s" % (prefix, sp, suffix), end='')
 
 
-# generator: (traj, task, image) x batch_size
-def batch_train(config):
-    env = config.env(config)
-    while True:
-        yield tuple(env.sample() for _ in range(config.batch_size_train))
+class EnvDataset(data.Dataset):
+    def __init__(self, config, train=True):
+        self.cfg = config
+        self.train = train
+        self.env = self.cfg.env(self.cfg)
+
+    def __getitem__(self, index):
+        return self.env.sample()
+
+    def __len__(self):
+        return self.cfg.epochs*self.cfg.batches_train*self.cfg.batch_size_train*10
+
+
+def collate_fn_env(batch):
+    ret = []
+    for sample in batch:
+        ret.append(tuple(sample))
+    return ret
 
 
 # generator: (traj, task, image) x batch_size
-def batch_test(config):
-    env = config.env(config)
-    while True:
-        yield tuple(env.sample() for _ in range(config.batch_size_test))
+def build_loader(config, train=True):
+    return torch.utils.data.DataLoader(
+        EnvDataset(
+            config=config,
+            train=train
+        ),
+        batch_size=config.batch_size_train if train else config.batch_size_test,
+        num_workers=config.multi_threads,
+        pin_memory=True,
+        shuffle=True,
+        collate_fn=collate_fn_env
+    )
 
 
 if __name__ == '__main__':

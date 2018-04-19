@@ -7,7 +7,7 @@ from datetime import datetime as dt
 import argparse
 
 from config import Config
-from utils import bar
+from utils import bar, build_loader
 from rbf import RBF
 from model import *
 from colorize import *
@@ -26,6 +26,10 @@ else:
     cfg = Config() 
 logger = SummaryWriter(os.path.join(cfg.log_path, cfg.experiment_name))
 torch.cuda.set_device(cfg.gpu)
+
+#loader
+generator_train = build_loader(cfg, True)  # function pointer
+generator_test = build_loader(cfg, False)    # function pointer
 
 class CMP(object):
     def __init__(self, config):
@@ -94,7 +98,7 @@ class CMP(object):
             avg_loss = []
             avg_loss_de = []
             avg_loss_ee = []
-            for i, batch in enumerate(self.cfg.generator_train(self.cfg)):
+            for i, batch in enumerate(generator_train):
                 w, c, im = batchToVariable(batch)
                 optim.zero_grad()
                 im_c = self.condition_net(im, c)
@@ -171,7 +175,7 @@ class CMP(object):
                     torch.autograd.Variable(batch_c, volatile=True),\
                     torch.autograd.Variable(batch_im, volatile=True)
 
-        batch = next(self.cfg.generator_test(self.cfg))
+        batch = next(generator_test)
         z, c, im = batchToVariable(batch)
         tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
                 for wo in self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy())
