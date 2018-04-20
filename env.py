@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 07:02:36 PM CST
+# Last Modified : Fri 20 Apr 2018 10:03:58 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -95,7 +95,21 @@ class ToyEnv(Env):
             pos = int(x - txsz[0] // 2), int(y + txsz[1] // 2)
             cv2.putText(
                 im, str(im_id[i]), pos, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.3, (.6, .6, .6), 1)
-        return tau, task_id, im
+        if self.cfg.img_as_task:
+            task_img = np.ones((self.cfg.object_size[0], self.cfg.object_size[1], 
+                3)).astype(np.float32)
+            border = self.cfg.object_size[0]//8
+            tmp = np.ones((3*(self.cfg.object_size[0]//4), 3*(self.cfg.object_size[0]//4), 
+                3))
+            tmp[..., :] = np.array(self.color[task_id])
+            pos = (0, 3*int(self.cfg.object_size[1]//4))
+            cv2.putText(
+                tmp, str(task_id), pos, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 1, (.6, .6, .6), 1)
+            task_img[border:border+3*(self.cfg.object_size[0]//4),
+                    border:border+3*(self.cfg.object_size[1]//4), :] = tmp
+            return tau, task_id, task_img, im
+        else:
+            return tau, task_id, im
 
     def display(self, tau, im, c=None, interactive=False):
         if interactive:
@@ -265,7 +279,15 @@ class YCBEnv(Env):
         noise_dir = np.asarray((-(tau_mean[-1] - tau_mean[0])[1], (tau_mean[-1] - tau_mean[0])[0]), dtype=np.float32)
         noise_dir /= np.linalg.norm(noise_dir)
         tau = tau_mean + noise_dir.reshape(1, 2) * noise.reshape(tau_mean.shape[0], 1)
-        return tau, task_id, im
+        if self.cfg.img_as_task:
+            obj_list = self.objects[list(self.objects.keys())[objects[task_id]]]
+            object_id = np.random.randint(0, len(obj_list))
+            object_im = cv2.cvtColor(cv2.imread(obj_list[object_id], cv2.IMREAD_UNCHANGED), 
+                    cv2.COLOR_BGRA2RGBA).astype(np.float32) / 255.
+            object_im = cv2.resize(object_im, self.cfg.object_size)
+            return tau, task_id, object_im[..., :3], im
+        else:
+            return tau, task_id, im
 
 
     # remap x[-1, 1], y[0, 1] to image coordinate

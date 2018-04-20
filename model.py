@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Tue 17 Apr 2018 11:31:34 PM CST
+# Last Modified : Fri 20 Apr 2018 09:11:29 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -52,11 +52,12 @@ class SpatialSoftmax(torch.nn.Module):
 
 
 class NN_img_c(torch.nn.Module):
-    def __init__(self, sz_image, ch_image, tasks):
+    def __init__(self, sz_image, ch_image, tasks, task_img_sz=-1):
         super(NN_img_c, self).__init__()
         self.sz_iamge = sz_image
         self.ch = ch_image
         self.tasks = tasks
+        self.task_img_sz = task_img_sz
 
         # for image input
         self.conv1 = torch.nn.Conv2d(self.ch, 64, kernel_size=4, padding=1, stride=2)
@@ -66,11 +67,21 @@ class NN_img_c(torch.nn.Module):
         self.conv5 = torch.nn.Conv2d(64, 64, kernel_size=3, padding=1)
         # self.fc_img1 = torch.nn.Linear(
         #     32 * (sz_image[0] // 3 // 2 // 2) * (sz_image[1] // 3 // 2 // 2), 64)
-        self.spatial_softmax = SpatialSoftmax(sz_image[0] // 2 // 2, sz_image[1] // 2 // 2, 64) # (N, 32*2)
+        self.spatial_softmax = SpatialSoftmax(sz_image[0] // 2 // 2, sz_image[1] // 2 // 2, 64) # (N, 64*2)
 
-        # for merge 
-        self.fc1 = torch.nn.Linear(self.tasks + 64*2, 128)
-        self.fc2 = torch.nn.Linear(128, 128)
+        if self.task_img_sz != -1:
+            self.conv1_task = torch.nn.Conv2d(self.ch, 32, kernel_size=3, padding=1)
+            self.conv2_task = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
+            self.conv3_task = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
+            self.pool = torch.nn.MaxPool2d(2, stride=2)
+            # for merge 
+            self.fc1 = torch.nn.Linear(32*(self.task_img_sz // 2 // 2 // 2)**2, self.tasks) 
+            self.fc2 = torch.nn.Linear(self.tasks + 64*2, 128)
+            self.fc3 = torch.nn.Linear(128, 128)
+        else:
+            # for merge 
+            self.fc1 = torch.nn.Linear(self.tasks + 64*2, 128)
+            self.fc2 = torch.nn.Linear(128, 128)
 
         self.relu = torch.nn.ReLU()
         self.sigmoid = torch.nn.Sigmoid()
@@ -86,10 +97,19 @@ class NN_img_c(torch.nn.Module):
         im_x = self.relu(self.conv5(im_x))
         im_x = self.spatial_softmax(im_x)
         
-        # merge 
-        im_c = torch.cat((im_x, c), 1)
-        im_c = self.relu(self.fc1(im_c))
-        im_c = self.fc2(im_c)
+        if self.task_img_sz != -1:
+            c_x = self.pool(self.relu(self.conv1_task(c)))
+            c_x = self.pool(self.relu(self.conv2_task(c_x)))
+            c_x = self.pool(self.relu(self.conv3_task(c_x))).view(n_batch, -1)
+            c_x = self.relu(self.fc1(c_x))
+            im_c = torch.cat((im_x, c_x), 1)
+            im_c = self.relu(self.fc2(im_c))
+            im_c = self.fc3(im_c)
+        else:
+            # merge 
+            im_c = torch.cat((im_x, c), 1)
+            im_c = self.relu(self.fc1(im_c))
+            im_c = self.fc2(im_c)
 
         return im_c
 

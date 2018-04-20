@@ -36,7 +36,8 @@ class CMP(object):
         self.cfg = config
         self.condition_net = NN_img_c(sz_image=self.cfg.image_size,
                                       ch_image=self.cfg.image_channels,
-                                      tasks=self.cfg.number_of_tasks)
+                                      tasks=self.cfg.number_of_tasks,
+                                      task_img_sz=(self.cfg.object_size[0] if self.cfg.img_as_task else -1))
         self.encoder = NN_qz_w(n_z=self.cfg.number_of_hidden,
                                ch_image=self.cfg.image_channels,
                                sz_image=self.cfg.image_size,
@@ -69,13 +70,20 @@ class CMP(object):
                                    self.cfg.image_size[0], self.cfg.image_size[1])
             batch_w = torch.zeros(
                 self.cfg.batch_size_train, self.cfg.number_of_MP_kernels, self.cfg.trajectory_dimension)
-            batch_c = torch.zeros(self.cfg.batch_size_train,
-                                  self.cfg.number_of_tasks)
+            if self.cfg.img_as_task:
+                batch_c = torch.zeros(self.cfg.batch_size_train, self.cfg.image_channels,
+                                       self.cfg.object_size[0], self.cfg.object_size[1])
+            else:
+                batch_c = torch.zeros(self.cfg.batch_size_train, self.cfg.number_of_tasks)
             for i, b in enumerate(traj_batch):
                 batch_w[i] = torch.from_numpy(RBF.calculate(
                     b[0], self.cfg.number_of_MP_kernels))
-                batch_c[i, b[1]] = 1.
-                batch_im[i] = torch.from_numpy(b[2].transpose(2, 0, 1))
+                if self.cfg.img_as_task:
+                    batch_c[i] = torch.from_numpy(b[2].transpose(2, 0, 1))
+                    batch_im[i] = torch.from_numpy(b[3].transpose(2, 0, 1))
+                else:
+                    batch_c[i,b[1]] = 1.
+                    batch_im[i] = torch.from_numpy(b[2].transpose(2, 0, 1))
 
             if self.use_gpu:
                 return torch.autograd.Variable(batch_w.cuda()),\
@@ -141,7 +149,10 @@ class CMP(object):
                 torch.save(net_param, check_point_file)
                 print("Check point saved @ %s" % check_point_file)
             if epoch != 0 and epoch % self.cfg.display_interval == 0:
-                img, img_gt, feature = self.test()
+                if self.cfg.img_as_task:
+                    img, img_gt, feature, c = self.test()
+                else:
+                    img, img_gt, feature = self.test()
                 feature = feature.transpose([0,2,3,1]).sum(axis=-1, keepdims=True)
                 h = feature.shape[1]*4 # CNN factor
                 heatmap = np.zeros((h*2 + 20*3, h*3 + 20*4, 3),  # output 2*3
@@ -149,6 +160,15 @@ class CMP(object):
                 for ind in range(feature.shape[0]):
                     heatmap[(ind//3)*(h+20)+20:(ind//3)*(h+20)+20+h, 
                             (ind%3)*(h+20)+20:(ind%3)*(h+20)+20+h, :] = colorize(feature[ind, ...], 4)
+                if self.cfg.img_as_task:
+                    # output 2*3
+                    h, w = self.cfg.object_size
+                    task_map = np.zeros((h*2+20*3, w*3+20*4, 3)).astype(np.uint8)
+                    for ind, task_img in enumerate(c.cpu().data.numpy()):
+                        task_map[(ind//3)*(h+20)+20:(ind//3)*(h+20)+20+h,
+                                (ind%3)*(w+20)+20:(ind%3)*(w+20)+20+w, :] = task_img.transpose([1,2,0])*255
+                    logger.add_image('test_task_img', task_map, epoch)
+
                 logger.add_image('test_img', img, epoch)
                 logger.add_image('heatmap', heatmap, epoch)
                 logger.add_image('test_img_gt', img_gt, epoch)
@@ -160,11 +180,19 @@ class CMP(object):
                                    self.cfg.image_size[0], self.cfg.image_size[1])
             batch_z = torch.normal(torch.zeros(self.cfg.batch_size_test, self.cfg.number_of_hidden),
                                    torch.ones(self.cfg.batch_size_test, self.cfg.number_of_hidden))
-            batch_c = torch.zeros(self.cfg.batch_size_test,
-                                  self.cfg.number_of_tasks)
+            if self.cfg.img_as_task:
+                batch_c = torch.zeros(self.cfg.batch_size_test, self.cfg.image_channels,
+                                       self.cfg.object_size[0], self.cfg.object_size[1])
+            else:
+                batch_c = torch.zeros(self.cfg.batch_size_test, self.cfg.number_of_tasks)
+
             for i, b in enumerate(traj_batch):
-                batch_c[i, b[1]] = 1.
-                batch_im[i] = torch.from_numpy(b[2].transpose(2, 0, 1))
+                if self.cfg.img_as_task:
+                    batch_c[i] = torch.from_numpy(b[2].transpose(2, 0, 1))
+                    batch_im[i] = torch.from_numpy(b[3].transpose(2, 0, 1))
+                else:
+                    batch_c[i,b[1]] = 1.
+                    batch_im[i] = torch.from_numpy(b[2].transpose(2, 0, 1))
 
             if self.use_gpu:
                 return torch.autograd.Variable(batch_z.cuda(), volatile=True),\
@@ -180,12 +208,18 @@ class CMP(object):
         z, c, im = batchToVariable(batch)
         tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
                 for wo in self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy())
-        tau, cls, imo = tuple(zip(*batch))
+        if self.cfg.img_as_task:
+            tau, cls, _, imo = tuple(zip(*batch))
+        else:
+            tau, cls, imo = tuple(zip(*batch))
         env = self.cfg.env(self.cfg)
         img = env.display(tauo, imo, cls, interactive=True)
         img_gt = env.display(tau, imo, cls, interactive=True)
         feature = self.condition_net.feature_map(im).data.cpu().numpy()
-        return img, img_gt, feature  
+        if self.cfg.img_as_task:
+            return img, img_gt, feature, c
+        else:
+            return img, img_gt, feature  
 
 
 def main():
