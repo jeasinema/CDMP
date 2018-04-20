@@ -4,7 +4,7 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 01:41:50 PM CST
+# Last Modified : 2018年04月20日 星期五 13时52分07秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -64,9 +64,9 @@ def build_loader(config, train=True):
             train=train
         ),
         batch_size=config.batch_size_train if train else config.batch_size_test,
-        num_workers=config.multi_threads,
-        pin_memory=True,
-        shuffle=True,
+        num_workers=config.multi_threads if train else 1,
+        pin_memory=True if train else False,
+        shuffle=False,
         collate_fn=collate_fn_env
     )
 

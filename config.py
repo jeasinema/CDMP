@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 10:58:16 AM CST
+# Last Modified : 2018年04月20日 星期五 13时46分10秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -40,7 +40,7 @@ class Config(object):
         self.display_interval = 1
         # program properties
         self.use_gpu = True
-        self.multi_threads = 24
+        self.multi_threads = 32
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
         self.experiment_name = "YCB_Ten_Point_Reacher_256_16_spatialsoftmax_224_fast"
