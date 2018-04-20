@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Thu 19 Apr 2018 11:45:08 PM CST
+# Last Modified : Fri 20 Apr 2018 10:39:52 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -31,16 +31,16 @@ class Config(object):
         self.trajectory_variance = 0.05
         self.totally_random = True          # if True, target can be anywhere
         # training properties
-        self.batch_size_train = 256         # n_batch
+        self.batch_size_train = 1         # n_batch
         self.batch_size_test = 6
-        self.batches_train = 100
+        self.batches_train = 1
         self.epochs = 1500
         self.continue_training = True
         self.save_interval = 10             # -1 for saving best model
         self.display_interval = 1
         # program properties
         self.use_gpu = True
-        self.multi_threads = 24
+        self.multi_threads = 2
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
         self.experiment_name = "YCB_Ten_Point_Reacher_256_16_spatialsoftmax_224_fast"

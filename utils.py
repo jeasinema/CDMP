@@ -4,7 +4,7 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Thu 19 Apr 2018 11:44:35 PM CST
+# Last Modified : Fri 20 Apr 2018 10:48:40 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch

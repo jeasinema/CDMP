@@ -175,7 +175,8 @@ class CMP(object):
                     torch.autograd.Variable(batch_c, volatile=True),\
                     torch.autograd.Variable(batch_im, volatile=True)
 
-        batch = next(generator_test)
+        for batch in generator_test:
+            break
         z, c, im = batchToVariable(batch)
         tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
                 for wo in self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy())
