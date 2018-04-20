@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 05:40:12 PM CST
+# Last Modified : Fri 20 Apr 2018 07:10:09 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -31,9 +31,9 @@ class Config(object):
         self.trajectory_variance = 0.05
         self.totally_random = False          # if True, target can be anywhere
         # training properties
-        self.batch_size_train = 1         # n_batch
+        self.batch_size_train = 256         # n_batch
         self.batch_size_test = 6
-        self.batches_train = 2
+        self.batches_train = 100
         self.epochs = 1500
         self.continue_training = True
         self.save_interval = 10             # -1 for saving best model
