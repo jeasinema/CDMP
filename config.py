@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 10:20:00 PM CST
+# Last Modified : Fri 20 Apr 2018 10:27:49 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -50,7 +50,7 @@ class Config(object):
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
         self.experiment_name = "Ten_Point_Reacher_512_128_spatialsoftmax_random_imgtask"
-        self.gpu=2
+        self.gpu=0
 
 
 if __name__ == '__main__':

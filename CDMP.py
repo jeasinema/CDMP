@@ -11,6 +11,7 @@ from utils import bar, build_loader
 from rbf import RBF
 from model import *
 from colorize import *
+from env import display
 from tensorboardX import SummaryWriter
  
 
@@ -213,8 +214,8 @@ class CMP(object):
         else:
             tau, cls, imo = tuple(zip(*batch))
         env = self.cfg.env(self.cfg)
-        img = env.display(tauo, imo, cls, interactive=True)
-        img_gt = env.display(tau, imo, cls, interactive=True)
+        img = display(self.cfg, tauo, imo, cls, interactive=True)
+        img_gt = display(self.cfg, tau, imo, cls, interactive=True)
         feature = self.condition_net.feature_map(im).data.cpu().numpy()
         if self.cfg.img_as_task:
             return img, img_gt, feature, c
@@ -230,10 +231,11 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # from env import Env
-    # env = Env(Config())
+    # from env import ToyEnv, display
+    # cfg = Config()
+    # env. = Env(cfg)
     # for i in range(10):
     #     batch = (env.sample(task_id=0, im_id=list(range(10))) for j in range(6))
     #     batch = tuple(zip(*batch))
-    #     env.display(batch[0], batch[2], batch[1], interactive=True)
+    #     display(cfg, batch[0], batch[2], batch[1], interactive=True)
     #     plt.pause(3)

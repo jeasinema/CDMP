@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 10:03:58 PM CST
+# Last Modified : Fri 20 Apr 2018 11:47:07 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -23,9 +23,6 @@ class Env(object):
     def sample(self):
         raise NotImplementedError
 
-    def display(self):
-        raise NotImplementedError
-
 
 class ToyEnv(Env):
     def __init__(self, config):
@@ -36,13 +33,6 @@ class ToyEnv(Env):
                        (-.6, -.75), (-.2, -.75), (.2, -.75), (.6, -.75))
         self.color = ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.), (0., 0., 0.), (1., 1., 0.),
                       (0., 1., 1.), (1., 0., 1.), (1., .5, 0.), (.5, 0., 1.), (0., 1., .5))
-
-    # remap x[-1, 1], y[0, 1] to image coordinate
-    def __remap_data_to_image(self, x, y):
-        im_sz = self.cfg.image_size
-        im_xr = self.cfg.image_x_range
-        im_yr = self.cfg.image_y_range
-        return (x - im_xr[0]) / (im_xr[1] - im_xr[0]) * im_sz[0], (im_yr[1] - y) / (im_yr[1] - im_yr[0]) * im_sz[1]
 
     # task: a 0~n_task-1 value, or None for random one; im: tuple of 4 color index(0~3), or None for random
     # return tau, task_id, im
@@ -110,79 +100,6 @@ class ToyEnv(Env):
             return tau, task_id, task_img, im
         else:
             return tau, task_id, im
-
-    def display(self, tau, im, c=None, interactive=False):
-        if interactive:
-            plt.close()
-            plt.ion()
-
-        if (isinstance(tau, np.ndarray) and len(tau.shape) == 3) or len(tau) == 1:
-            if len(tau) == 1:
-                im = im[0]
-                tau = tau[0]
-                c = c[0]
-
-            fig = plt.figure()
-            plt.imshow(im)
-            plt.plot(*self.__remap_data_to_image(tau[:, 0], tau[:, 1]))
-            plt.xticks([])
-            plt.yticks([])
-            if c is not None:
-                plt.title("Task_%d" % c)
-
-        else:
-            if len(tau) > 8:
-                im = im[:8]
-                tau = tau[:8]
-                c = c[:8]
-                print(
-                    "Warning: more then 8 samples are provided, only first 8 will be displayed")
-
-            n_batch = len(tau)
-            if n_batch <= 3:
-                fig, axarr = plt.subplots(n_batch)
-            elif n_batch == 4:
-                fig, axarr = plt.subplots(2, 2)
-            elif n_batch <= 6:
-                fig, axarr = plt.subplots(2, 3)
-            else:
-                fig, axarr = plt.subplots(2, 4)
-            for w, i, t, f in zip(tau, im, c, range(n_batch)):
-                if n_batch <= 3:
-                    axarr[f].imshow(i)
-                    axarr[f].plot(
-                        *self.__remap_data_to_image(w[:, 0], w[:, 1]))
-                    if t is not None:
-                        axarr[f].set_title("Task_%d" % t)
-                elif n_batch == 4:
-                    axarr[f // 2, f % 2].imshow(i)
-                    axarr[f // 2, f %
-                          2].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
-                    if t is not None:
-                        axarr[f // 2, f % 2].set_title("Task_%d" % t)
-                elif n_batch <= 6:
-                    axarr[f // 3, f % 3].set_yticklabels([])
-                    axarr[f // 3, f % 3].set_xticklabels([])
-                    axarr[f // 3, f % 3].imshow(i)
-                    axarr[f // 3, f %
-                          3].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
-                    if t is not None:
-                        axarr[f // 3, f % 3].set_title("Task_%d" % t)
-                else:
-                    axarr[f // 4, f % 4].set_yticklabels([])
-                    axarr[f // 4, f % 4].set_xticklabels([])
-                    axarr[f // 4, f % 4].imshow(i)
-                    axarr[f // 4, f %
-                          4].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]))
-                    if t is not None:
-                        axarr[f // 4, f % 4].set_title("Task_%d" % t)
-        if interactive:
-            plt.pause(0.01)
-        else:
-            plt.show()
-        img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-        img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-        return img
 
 
 class YCBEnv(Env):
@@ -290,83 +207,83 @@ class YCBEnv(Env):
             return tau, task_id, im
 
 
-    # remap x[-1, 1], y[0, 1] to image coordinate
-    def __remap_data_to_image(self, x, y):
-        im_sz = self.cfg.image_size
-        im_xr = self.cfg.image_x_range
-        im_yr = self.cfg.image_y_range
-        return (x - im_xr[0]) / (im_xr[1] - im_xr[0]) * im_sz[0], (im_yr[1] - y) / (im_yr[1] - im_yr[0]) * im_sz[1]
+def display(cfg, tau, im, c=None, name="", interactive=False):
+    if interactive:
+        plt.ion()
 
+    plt.figure(num=name)
+    plt.clf()
 
-    def display(self, tau, im, c=None, name="", interactive=False):
-        if interactive:
-            plt.ion()
+    if (isinstance(tau, np.ndarray) and len(tau.shape) == 3) or len(tau) == 1:
+        if len(tau) == 1:
+            im = im[0]
+            tau = tau[0]
+            c = c[0]
 
-        plt.figure(num=name)
-        plt.clf()
+        fig = plt.figure()
+        plt.imshow(im)
+        plt.plot(*__remap_data_to_image(cfg, tau[:, 0], tau[:, 1]), "#00FF00")
+        plt.xticks([])
+        plt.yticks([])
+        if c is not None:
+            plt.title("Task_%d"%c)
 
-        if (isinstance(tau, np.ndarray) and len(tau.shape) == 3) or len(tau) == 1:
-            if len(tau) == 1:
-                im = im[0]
-                tau = tau[0]
-                c = c[0]
+    else:
+        if len(tau) > 8:
+            im = im[:8]
+            tau = tau[:8]
+            c = c[:8]
+            print("Warning: more then 8 samples are provided, only first 8 will be displayed")
 
-            fig = plt.figure()
-            plt.imshow(im)
-            plt.plot(*self.__remap_data_to_image(tau[:, 0], tau[:, 1]), "#00FF00")
-            plt.xticks([])
-            plt.yticks([])
-            if c is not None:
-                plt.title("Task_%d"%c)
-
+        n_batch = len(tau)
+        if n_batch <= 3:
+            fig, axarr = plt.subplots(n_batch, num=name)
+        elif n_batch == 4:
+            fig, axarr = plt.subplots(2, 2, num=name)
+        elif n_batch <= 6:
+            fig, axarr = plt.subplots(2, 3, num=name)
         else:
-            if len(tau) > 8:
-                im = im[:8]
-                tau = tau[:8]
-                c = c[:8]
-                print("Warning: more then 8 samples are provided, only first 8 will be displayed")
-
-            n_batch = len(tau)
+            fig, axarr = plt.subplots(2, 4, num=name)
+        for w, i, t, f in zip(tau, im, c, range(n_batch)):
             if n_batch <= 3:
-                fig, axarr = plt.subplots(n_batch, num=name)
+                axarr[f].imshow(i)
+                axarr[f].plot(*__remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
+                if t is not None:
+                    axarr[f].set_title("Task_%d"%t)
             elif n_batch == 4:
-                fig, axarr = plt.subplots(2, 2, num=name)
+                axarr[f // 2, f % 2].imshow(i)
+                axarr[f // 2, f % 2].plot(*__remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
+                if t is not None:
+                    axarr[f // 2, f % 2].set_title("Task_%d"%t)
             elif n_batch <= 6:
-                fig, axarr = plt.subplots(2, 3, num=name)
+                axarr[f // 3, f % 3].set_yticklabels([])
+                axarr[f // 3, f % 3].set_xticklabels([])
+                axarr[f // 3, f % 3].imshow(i)
+                axarr[f // 3, f % 3].plot(*__remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
+                if t is not None:
+                    axarr[f // 3, f % 3].set_title("Task_%d"%t)
             else:
-                fig, axarr = plt.subplots(2, 4, num=name)
-            for w, i, t, f in zip(tau, im, c, range(n_batch)):
-                if n_batch <= 3:
-                    axarr[f].imshow(i)
-                    axarr[f].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]), "#00FF00")
-                    if t is not None:
-                        axarr[f].set_title("Task_%d"%t)
-                elif n_batch == 4:
-                    axarr[f // 2, f % 2].imshow(i)
-                    axarr[f // 2, f % 2].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]), "#00FF00")
-                    if t is not None:
-                        axarr[f // 2, f % 2].set_title("Task_%d"%t)
-                elif n_batch <= 6:
-                    axarr[f // 3, f % 3].set_yticklabels([])
-                    axarr[f // 3, f % 3].set_xticklabels([])
-                    axarr[f // 3, f % 3].imshow(i)
-                    axarr[f // 3, f % 3].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]), "#00FF00")
-                    if t is not None:
-                        axarr[f // 3, f % 3].set_title("Task_%d"%t)
-                else:
-                    axarr[f // 4, f % 4].set_yticklabels([])
-                    axarr[f // 4, f % 4].set_xticklabels([])
-                    axarr[f // 4, f % 4].imshow(i)
-                    axarr[f // 4, f % 4].plot(*self.__remap_data_to_image(w[:, 0], w[:, 1]), "#00FF00")
-                    if t is not None:
-                        axarr[f // 4, f % 4].set_title("Task_%d"%t)
-        if interactive:
-            plt.pause(0.01)
-        else:
-            plt.show()
-        img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-        img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-        return img
+                axarr[f // 4, f % 4].set_yticklabels([])
+                axarr[f // 4, f % 4].set_xticklabels([])
+                axarr[f // 4, f % 4].imshow(i)
+                axarr[f // 4, f % 4].plot(*__remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
+                if t is not None:
+                    axarr[f // 4, f % 4].set_title("Task_%d"%t)
+    if interactive:
+        plt.pause(0.01)
+    else:
+        plt.show()
+    img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    return img
+
+
+# remap x[-1, 1], y[0, 1] to image coordinate
+def __remap_data_to_image(cfg, x, y):
+    im_sz = cfg.image_size
+    im_xr = cfg.image_x_range
+    im_yr = cfg.image_y_range
+    return (x - im_xr[0]) / (im_xr[1] - im_xr[0]) * im_sz[0], (im_yr[1] - y) / (im_yr[1] - im_yr[0]) * im_sz[1]
 
 
 
