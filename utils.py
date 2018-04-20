@@ -4,7 +4,7 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 10:48:40 AM CST
+# Last Modified : Fri 20 Apr 2018 01:41:50 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -46,7 +46,7 @@ class EnvDataset(data.Dataset):
         return self.env.sample()
 
     def __len__(self):
-        return self.cfg.epochs*self.cfg.batches_train*self.cfg.batch_size_train*10
+        return self.cfg.batches_train*self.cfg.batch_size_train if self.train else self.cfg.batch_size_test
 
 
 def collate_fn_env(batch):
