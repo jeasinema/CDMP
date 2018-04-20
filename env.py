@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月20日 星期五 16时05分15秒
+# Last Modified : Fri 20 Apr 2018 04:19:23 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -229,15 +229,20 @@ class YCBEnv(Env):
 
         if self.cfg.totally_random:
             while True:
-                ret = np.array(poisson_dics_samples(2700, 2700, 500))/2700 # critic
+                ret = np.array(poisson_disc_samples(2700, 2700, 500))/2700 # critic
                 if len(ret) >= len(self.center):
                     break
-                ret = ret[np.random.shuffle(np.arange(len(ret)))[:len(ret)]]
-                factor = 0.8
-                ret[:, 0] *= (self.cfg.image_x_range[1]-self.cfg.image_x_range[0])*0.8  # critic
-                ret[:, 1] *= (self.cfg.image_y_range[1]-self.cfg.image_y_range[0])*0.8  # critic
-                offset_x = (self.cfg.image_x_range[1]-self.cfg.image_x_range[0])*0.8
-                ret[:, 0] += self.cfg.image_x_range[0]
+            ind = np.arange(len(ret))
+            np.random.shuffle(ind)
+            ret = ret[ind[:len(self.center)]]
+            factor = 0.7 # critic
+            ret[:, 0] *= (self.cfg.image_x_range[1]-self.cfg.image_x_range[0])*factor
+            ret[:, 1] *= (self.cfg.image_y_range[1]-self.cfg.image_y_range[0])*factor
+            offset_x = (self.cfg.image_x_range[1]-self.cfg.image_x_range[0])*(1-factor)/2
+            offset_y = (self.cfg.image_y_range[1]-self.cfg.image_y_range[0])*(1-factor)/2
+            ret[:, 0] += (offset_x+self.cfg.image_x_range[0])
+            ret[:, 1] += (offset_y+self.cfg.image_y_range[0])
+            centers = [(pair[0], pair[1]) for pair in ret] 
         else:
             centers = list(self.center).copy()
         

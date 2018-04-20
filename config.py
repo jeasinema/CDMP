@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月20日 星期五 13时46分10秒
+# Last Modified : Fri 20 Apr 2018 04:23:56 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -20,7 +20,7 @@ class Config(object):
         self.image_x_range = (-.45, .45)
         self.image_y_range = (-.4, .4)
         self.image_channels = 3             # ch_im
-        self.number_of_hidden = 16          # n_z
+        self.number_of_hidden = 128          # n_z
         self.number_of_MP_kernels = 10      # n_k
         self.number_of_oversample = 30      # n_oversample
         self.trajectory_variance = 0.05
@@ -31,7 +31,7 @@ class Config(object):
         self.trajectory_variance = 0.05
         self.totally_random = True          # if True, target can be anywhere
         # training properties
-        self.batch_size_train = 256         # n_batch
+        self.batch_size_train = 512         # n_batch
         self.batch_size_test = 6
         self.batches_train = 100
         self.epochs = 1500
@@ -43,8 +43,8 @@ class Config(object):
         self.multi_threads = 32
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "YCB_Ten_Point_Reacher_256_16_spatialsoftmax_224_fast"
-        self.gpu=2
+        self.experiment_name = "YCB_Ten_Point_Reacher_512_128_spatialsoftmax_224_fast_random"
+        self.gpu=3
 
 
 if __name__ == '__main__':
