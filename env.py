@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 10:48:29 AM CST
+# Last Modified : Fri 20 Apr 2018 10:57:55 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -176,13 +176,16 @@ class YCBEnv(Env):
         self.cfg = config
 
         self.t = np.linspace(0, 1, self.cfg.number_time_samples, dtype=np.float32)
-        self.backgrounds = [cv2.cvtColor(cv2.imread(p), cv2.COLOR_BGR2RGB).astype(np.float32) / 255.
-                            for p in sorted(glob(self.cfg.image_path+"/background/*.png", recursive=False))]
+        # self.backgrounds = [cv2.cvtColor(cv2.imread(p), cv2.COLOR_BGR2RGB).astype(np.float32) / 255.
+        #                     for p in sorted(glob(self.cfg.image_path+"/background/*.png", recursive=False))]
+        self.backgrounds = [p for p in sorted(glob(self.cfg.image_path+"/background/*.png", recursive=False))]
         self.objects = {}
         for pth in sorted(glob(self.cfg.image_path+"/clipped_obj/*", recursive=False)):
-            img = [cv2.imread(p, cv2.IMREAD_UNCHANGED) for p in sorted(glob(pth+"/*.png"))]
-            self.objects[pth.split('/')[-1]] = [cv2.cvtColor(im, cv2.COLOR_BGRA2RGBA).astype(np.float32) / 255.
-                                                for im in img]
+            # img = [cv2.imread(p, cv2.IMREAD_UNCHANGED) for p in sorted(glob(pth+"/*.png"))]
+            # self.objects[pth.split('/')[-1]] = [cv2.cvtColor(im, cv2.COLOR_BGRA2RGBA).astype(np.float32) / 255.
+            #                                     for im in img]
+            img = [p for p in sorted(glob(pth+"/*.png"))]
+            self.objects[pth.split('/')[-1]] = img
 
         self.center = ((-.27, .2),  (-.09, .2),  (.09, .2),  (.27, .2),
                        (-.27, 0.),                           (.27, 0.),
@@ -227,11 +230,14 @@ class YCBEnv(Env):
         centers = list(self.center).copy()
         np.random.shuffle(centers)
         back_id = np.random.randint(0, len(self.backgrounds))
-        im = self.backgrounds[back_id].copy()
+        im = cv2.cvtColor(cv2.imread(self.backgrounds[back_id]), cv2.COLOR_BGR2RGB).astype(np.float32) / 255.
 
         for i in objects:
             obj_list = self.objects[list(self.objects.keys())[i]]
-            self.__mask_add_image(im, obj_list[np.random.randint(0, len(obj_list))], centers[i])
+            object_id = np.random.randint(0, len(obj_list))
+            object_im = cv2.cvtColor(cv2.imread(obj_list[object_id], cv2.IMREAD_UNCHANGED), 
+                    cv2.COLOR_BGRA2RGBA).astype(np.float32) / 255.
+            self.__mask_add_image(im, object_im, centers[i])
         im = cv2.resize(im, self.cfg.image_size)
 
         tau_mean = np.vstack([centers[task_id][0] * self.t,
