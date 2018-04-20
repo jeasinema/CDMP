@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 10:57:55 AM CST
+# Last Modified : 2018年04月20日 星期五 16时05分15秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -206,7 +206,7 @@ class YCBEnv(Env):
         rect[1] = int(x - obj_sz[1] // 2)
         rect[2] = rect[0] + obj_sz[0]
         rect[3] = rect[1] + obj_sz[1]
-
+        
         scene[rect[0]:rect[2], rect[1]: rect[3], :] *= (1. - obj[:, :, 3:])
         scene[rect[0]:rect[2], rect[1]: rect[3], :] += obj[:, :, :3]
 
@@ -227,7 +227,20 @@ class YCBEnv(Env):
         if objects is None:
             objects = tuple(range(len(self.objects.keys())))
 
-        centers = list(self.center).copy()
+        if self.cfg.totally_random:
+            while True:
+                ret = np.array(poisson_dics_samples(2700, 2700, 500))/2700 # critic
+                if len(ret) >= len(self.center):
+                    break
+                ret = ret[np.random.shuffle(np.arange(len(ret)))[:len(ret)]]
+                factor = 0.8
+                ret[:, 0] *= (self.cfg.image_x_range[1]-self.cfg.image_x_range[0])*0.8  # critic
+                ret[:, 1] *= (self.cfg.image_y_range[1]-self.cfg.image_y_range[0])*0.8  # critic
+                offset_x = (self.cfg.image_x_range[1]-self.cfg.image_x_range[0])*0.8
+                ret[:, 0] += self.cfg.image_x_range[0]
+        else:
+            centers = list(self.center).copy()
+        
         np.random.shuffle(centers)
         back_id = np.random.randint(0, len(self.backgrounds))
         im = cv2.cvtColor(cv2.imread(self.backgrounds[back_id]), cv2.COLOR_BGR2RGB).astype(np.float32) / 255.
