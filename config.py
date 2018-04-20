@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 10:11:30 PM CST
+# Last Modified : Fri 20 Apr 2018 10:20:00 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -26,18 +26,18 @@ class Config(object):
         # self.image_x_range = (-.45, .45)
         # self.image_y_range = (-.4, .4)
         self.image_channels = 3             # ch_im
-        self.number_of_hidden = 16          # n_z
+        self.number_of_hidden = 128          # n_z
         self.number_of_MP_kernels = 10      # n_k
         self.number_of_oversample = 30      # n_oversample
         self.trajectory_variance = 0.05
         # environment
-        self.env = YCBEnv                      # class pointer
+        self.env = ToyEnv                      # class pointer
         self.image_path = "./data/cdmp_images"
         self.number_time_samples = 100      # n_t
         self.trajectory_variance = 0.05
-        self.totally_random = False         # if True, target can be anywhere
+        self.totally_random = True         # if True, target can be anywhere
         # training properties
-        self.batch_size_train = 256         # n_batch
+        self.batch_size_train = 512         # n_batch
         self.batch_size_test = 6
         self.batches_train = 100
         self.epochs = 1500
@@ -49,8 +49,8 @@ class Config(object):
         self.multi_threads = 10
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Ten_Point_Reacher_256_16_spatialsoftmax_imgtask"
-        self.gpu=3
+        self.experiment_name = "Ten_Point_Reacher_512_128_spatialsoftmax_random_imgtask"
+        self.gpu=2
 
 
 if __name__ == '__main__':
