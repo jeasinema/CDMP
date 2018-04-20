@@ -4,7 +4,7 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月20日 星期五 15时33分10秒
+# Last Modified : Fri 20 Apr 2018 07:02:31 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -57,6 +57,10 @@ def collate_fn_env(batch):
     return ret
 
 
+def worker_init_fn_env(pid):
+    np.random.seed(torch.initial_seed() % (2**31-1))
+
+
 # generator: (traj, task, image) x batch_size
 def build_loader(config, train=True):
     return torch.utils.data.DataLoader(
@@ -67,8 +71,9 @@ def build_loader(config, train=True):
         batch_size=config.batch_size_train if train else config.batch_size_test,
         num_workers=config.multi_threads if train else 1,
         pin_memory=True if train else False,
-        shuffle=False,
-        collate_fn=collate_fn_env
+        shuffle=True,
+        collate_fn=collate_fn_env,
+        worker_init_fn=worker_init_fn_env
     )
 
 
