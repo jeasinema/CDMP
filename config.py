@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 10:27:49 PM CST
+# Last Modified : 2018年04月20日 星期五 23时56分49秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -46,7 +46,7 @@ class Config(object):
         self.display_interval = 1
         # program properties
         self.use_gpu = True
-        self.multi_threads = 10
+        self.multi_threads = 20
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
         self.experiment_name = "Ten_Point_Reacher_512_128_spatialsoftmax_random_imgtask"
