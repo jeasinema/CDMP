@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 09:11:29 PM CST
+# Last Modified : 2018年04月22日 星期日 01时43分41秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -101,7 +101,7 @@ class NN_img_c(torch.nn.Module):
             c_x = self.pool(self.relu(self.conv1_task(c)))
             c_x = self.pool(self.relu(self.conv2_task(c_x)))
             c_x = self.pool(self.relu(self.conv3_task(c_x))).view(n_batch, -1)
-            c_x = self.relu(self.fc1(c_x))
+            c_x = F.log_softmax(self.fc1(c_x), -1)
             im_c = torch.cat((im_x, c_x), 1)
             im_c = self.relu(self.fc2(im_c))
             im_c = self.fc3(im_c)
