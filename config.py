@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月22日 星期日 01时52分34秒
+# Last Modified : 2018年04月23日 星期一 22时41分13秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -20,24 +20,24 @@ class Config(object):
         self.img_as_task = True
         self.object_size = (32, 32)
         # Toy
-        self.image_x_range = (-1., 1.)
-        self.image_y_range = (-1., 1.)
+        # self.image_x_range = (-1., 1.)
+        # self.image_y_range = (-1., 1.)
         # YCB
-        # self.image_x_range = (-.45, .45)
-        # self.image_y_range = (-.4, .4)
+        self.image_x_range = (-.45, .45)
+        self.image_y_range = (-.4, .4)
         self.image_channels = 3             # ch_im
         self.number_of_hidden = 16          # n_z
         self.number_of_MP_kernels = 10      # n_k
         self.number_of_oversample = 30      # n_oversample
         self.trajectory_variance = 0.05
         # environment
-        self.env = ToyEnv                      # class pointer
+        self.env = YCBEnv                      # class pointer
         self.image_path = "./data/cdmp_images"
         self.number_time_samples = 100      # n_t
         self.trajectory_variance = 0.05
         self.totally_random = False         # if True, target can be anywhere
         # training properties
-        self.batch_size_train = 256         # n_batch
+        self.batch_size_train = 512         # n_batch
         self.batch_size_test = 6
         self.batches_train = 100
         self.epochs = 1500
@@ -46,11 +46,11 @@ class Config(object):
         self.display_interval = 1
         # program properties
         self.use_gpu = True
-        self.multi_threads = 32
+        self.multi_threads = 16
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "Ten_Point_Reacher_256_16_spatialsoftmax_sf_fix"
-        self.gpu=3
+        self.experiment_name = "YCB_Ten_Point_Reacher_512_16_spatialsoftmax_sf_pretrained"
+        self.gpu=1
 
 
 if __name__ == '__main__':

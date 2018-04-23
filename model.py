@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月22日 星期日 01时43分41秒
+# Last Modified : 2018年04月23日 星期一 21时29分23秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -70,12 +70,20 @@ class NN_img_c(torch.nn.Module):
         self.spatial_softmax = SpatialSoftmax(sz_image[0] // 2 // 2, sz_image[1] // 2 // 2, 64) # (N, 64*2)
 
         if self.task_img_sz != -1:
-            self.conv1_task = torch.nn.Conv2d(self.ch, 32, kernel_size=3, padding=1)
+            self.conv0_task = torch.nn.Conv2d(self.ch, 32, kernel_size=3, padding=1)
+            self.conv1_task = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
             self.conv2_task = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
-            self.conv3_task = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
-            self.pool = torch.nn.MaxPool2d(2, stride=2)
+            self.conv3_task = torch.nn.Conv2d(32, 32, kernel_size=1, padding=0)
+            self.conv4_task = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
+            self.conv5_task = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
+            self.conv6_task = torch.nn.Conv2d(32, 32, kernel_size=1, padding=0)
+            self.conv7_task = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
+            self.conv8_task = torch.nn.Conv2d(32, 32, kernel_size=3, padding=1)
+            self.conv9_task = torch.nn.Conv2d(32, 32, kernel_size=1, padding=0)
+            self.pool = torch.nn.AvgPool2d(2, stride=2)
             # for merge 
-            self.fc1 = torch.nn.Linear(32*(self.task_img_sz // 2 // 2 // 2)**2, self.tasks) 
+            self.fc0 = torch.nn.Linear(32*(self.task_img_sz)**2, 128) 
+            self.fc1 = torch.nn.Linear(128, self.tasks) 
             self.fc2 = torch.nn.Linear(self.tasks + 64*2, 128)
             self.fc3 = torch.nn.Linear(128, 128)
         else:
@@ -98,10 +106,21 @@ class NN_img_c(torch.nn.Module):
         im_x = self.spatial_softmax(im_x)
         
         if self.task_img_sz != -1:
-            c_x = self.pool(self.relu(self.conv1_task(c)))
-            c_x = self.pool(self.relu(self.conv2_task(c_x)))
-            c_x = self.pool(self.relu(self.conv3_task(c_x))).view(n_batch, -1)
-            c_x = F.log_softmax(self.fc1(c_x), -1)
+            c_0 = self.relu(self.conv0_task(c))
+            c_1 = self.relu(self.conv1_task(c_0))
+            c_2 = self.relu(self.conv2_task(c_1))
+            c_3 = self.relu(self.conv3_task(c_2))
+            c_3 += c_0
+            c_4 = self.relu(self.conv4_task(c_3))
+            c_5 = self.relu(self.conv5_task(c_4))
+            c_6 = self.relu(self.conv6_task(c_5))
+            c_6 += c_3
+            c_7 = self.relu(self.conv7_task(c_6))
+            c_8 = self.relu(self.conv8_task(c_7))
+            c_9 = self.relu(self.conv9_task(c_8))
+            c_9 += c_6
+            c_9 = c_9.view(n_batch, -1)
+            c_x = F.log_softmax(self.fc1(self.relu(self.fc0(c_9))), -1)
             im_c = torch.cat((im_x, c_x), 1)
             im_c = self.relu(self.fc2(im_c))
             im_c = self.fc3(im_c)
