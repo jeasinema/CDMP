@@ -119,12 +119,12 @@ class CMP(object):
                 l.backward()
                 optim.step()
 
-                avg_loss.append(l.data[0])
-                avg_loss_de.append(de.data[0])
-                avg_loss_ee.append(ee.data[0])
+                avg_loss.append(l.item())
+                avg_loss_de.append(de.item())
+                avg_loss_ee.append(ee.item())
 
                 bar(i + 1, self.cfg.batches_train, "Epoch %d/%d: " % (epoch + 1, self.cfg.epochs),
-                    " | D-Err=%f; E-Err=%f" % (de.data[0], ee.data[0]), end_string='')
+                    " | D-Err=%f; E-Err=%f" % (de.item(), ee.item()), end_string='')
 
                 # update training counter and make check points
                 if i + 1 >= self.cfg.batches_train:

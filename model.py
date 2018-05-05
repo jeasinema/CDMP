@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月23日 星期一 21时29分23秒
+# Last Modified : 2018年04月29日 星期日 00时33分36秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -191,7 +191,7 @@ class NN_pw_zimc(torch.nn.Module):
             else:
                 return dist.sample()
         else:
-            return dist.sample_n(samples)
+            return dist.sample((samples,))
 
     # input w(n_batch, k_w, dim_w) z(n_batch, n_z), im_c(n_batch, channel)
     # output (n_batch,)
@@ -273,7 +273,7 @@ class NN_qz_w(torch.nn.Module):
                 s = dist.sample().detach()
                 return mean + torch.exp(logvar) * s
             else:
-                s = dist.sample_n(samples).detach()
+                s = dist.sample((samples,)).detach()
                 return mean.unsqueeze(0) + torch.exp(logvar).unsqueeze(0) * s
         else:
             dist = torch.distributions.Normal(mean, torch.exp(logvar))
@@ -281,7 +281,7 @@ class NN_qz_w(torch.nn.Module):
                 sample = dist.sample().detach()
                 return sample
             else:
-                sample = dist.sample_n(samples).detach()
+                sample = dist.sample((samples,)).detach()
                 return sample
 
     # return (n_batch,)

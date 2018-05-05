@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月23日 星期一 22时41分13秒
+# Last Modified : 2018年04月28日 星期六 23时44分25秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -17,7 +17,7 @@ class Config(object):
         self.number_of_tasks = 10          # n_c
         self.trajectory_dimension = 2       # n_dim
         self.image_size = (224, 224)        # sz_im
-        self.img_as_task = True
+        self.img_as_task = False
         self.object_size = (32, 32)
         # Toy
         # self.image_x_range = (-1., 1.)
@@ -26,7 +26,7 @@ class Config(object):
         self.image_x_range = (-.45, .45)
         self.image_y_range = (-.4, .4)
         self.image_channels = 3             # ch_im
-        self.number_of_hidden = 16          # n_z
+        self.number_of_hidden = 128          # n_z
         self.number_of_MP_kernels = 10      # n_k
         self.number_of_oversample = 30      # n_oversample
         self.trajectory_variance = 0.05
@@ -35,7 +35,7 @@ class Config(object):
         self.image_path = "./data/cdmp_images"
         self.number_time_samples = 100      # n_t
         self.trajectory_variance = 0.05
-        self.totally_random = False         # if True, target can be anywhere
+        self.totally_random = True         # if True, target can be anywhere
         # training properties
         self.batch_size_train = 512         # n_batch
         self.batch_size_test = 6
@@ -49,8 +49,8 @@ class Config(object):
         self.multi_threads = 16
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "YCB_Ten_Point_Reacher_512_16_spatialsoftmax_sf_pretrained"
-        self.gpu=1
+        self.experiment_name = "YCB_Ten_Point_Reacher_512_128_spatialsoftmax_random_aug"
+        self.gpu=0
 
 
 if __name__ == '__main__':

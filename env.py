@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月20日 星期五 23时55分34秒
+# Last Modified : 2018年04月28日 星期六 23时54分44秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -14,6 +14,7 @@ from glob import glob
 
 from utils import *
 from rbf import RBF
+from augmentations import CDMPAugmentation
 
 
 def display(cfg, tau, im, c=None, name="", interactive=False):
@@ -207,6 +208,9 @@ class YCBEnv(Env):
         self.center = ((-.27, .2),  (-.09, .2),  (.09, .2),  (.27, .2),
                        (-.27, 0.),                           (.27, 0.),
                        (-.27, -.2), (-.09, -.2), (.09, -.2), (.27, -.2))
+        self.augmentation = CDMPAugmentation(config.image_size[0])
+        if self.cfg.img_as_task:
+            self.augmentation_obj = CDMPAugmentation(config.object_size[0])
 
     # draw obj(RGBA) into scene(RGB) and scene_mask(u8) at pos(x, y)
     # no return and ops directly on inputs
@@ -270,15 +274,15 @@ class YCBEnv(Env):
         np.random.shuffle(centers)
         back_id = np.random.randint(0, len(self.backgrounds))
         im = cv2.cvtColor(cv2.imread(
-            self.backgrounds[back_id]), cv2.COLOR_BGR2RGB).astype(np.float32) / 255.
+            self.backgrounds[back_id]), cv2.COLOR_BGR2RGB).astype(np.float32)/255.
 
         for i in objects:
             obj_list = self.objects[list(self.objects.keys())[i]]
             object_id = np.random.randint(0, len(obj_list))
             object_im = cv2.cvtColor(cv2.imread(obj_list[object_id], cv2.IMREAD_UNCHANGED),
-                                     cv2.COLOR_BGRA2RGBA).astype(np.float32) / 255.
+                                     cv2.COLOR_BGRA2RGBA).astype(np.float32)/255.
             self.__mask_add_image(im, object_im, centers[i])
-        im = cv2.resize(im, self.cfg.image_size)
+        im = self.augmentation(im*255.)/255.
 
         tau_mean = np.vstack([centers[task_id][0] * self.t,
                               (centers[task_id][1] - self.cfg.image_y_range[0])
@@ -295,9 +299,9 @@ class YCBEnv(Env):
                 objects[task_id]]]
             object_id = np.random.randint(0, len(obj_list))
             object_im = cv2.cvtColor(cv2.imread(obj_list[object_id], cv2.IMREAD_UNCHANGED),
-                                     cv2.COLOR_BGRA2RGBA).astype(np.float32) / 255.
-            object_im = cv2.resize(object_im, self.cfg.object_size)
-            return tau, task_id, object_im[..., :3], im
+                                     cv2.COLOR_BGRA2RGBA).astype(np.float32)
+            object_im = self.augmentation_obj(object_im[..., :3])/255.
+            return tau, task_id, object_im, im
         else:
             return tau, task_id, im
 
