@@ -4,16 +4,17 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月28日 星期六 23时54分44秒
+# Last Modified : 2018年05月10日 星期四 22时50分24秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from glob import glob
+from rbf import RBF
+from dmp import DMP
 
 from utils import *
-from rbf import RBF
 from augmentations import CDMPAugmentation
 
 
@@ -119,6 +120,9 @@ class ToyEnv(Env):
         self.color = ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.), (0., 0., 0.), (1., 1., 0.),
                       (0., 1., 1.), (1., 0., 1.), (1., .5, 0.), (.5, 0., 1.), (0., 1., .5))
 
+        if self.cfg.use_DMP:
+            self.dmp = DMP(self.cfg)
+
     # task: a 0~n_task-1 value, or None for random one; im: tuple of 4 color index(0~3), or None for random
     # return tau, task_id, im
     def sample(self, task_id=None, im_id=None):
@@ -170,6 +174,12 @@ class ToyEnv(Env):
             pos = int(x - txsz[0] // 2), int(y + txsz[1] // 2)
             cv2.putText(
                 im, str(im_id[i]), pos, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.3, (.6, .6, .6), 1)
+
+        if self.cfg.use_DMP:
+            tau = self.dmp.calculate(tau[np.newaxis, ...])[0]
+        else:
+            tau = RBF.calculate(tau, self.cfg.number_of_MP_kernels)
+
         if self.cfg.img_as_task:
             task_img = np.ones((self.cfg.object_size[0], self.cfg.object_size[1],
                                 3)).astype(np.float32)
@@ -211,6 +221,9 @@ class YCBEnv(Env):
         self.augmentation = CDMPAugmentation(config.image_size[0])
         if self.cfg.img_as_task:
             self.augmentation_obj = CDMPAugmentation(config.object_size[0])
+
+        if self.cfg.use_DMP:
+            self.dmp = DMP(self.cfg)
 
     # draw obj(RGBA) into scene(RGB) and scene_mask(u8) at pos(x, y)
     # no return and ops directly on inputs
@@ -294,6 +307,15 @@ class YCBEnv(Env):
         noise_dir /= np.linalg.norm(noise_dir)
         tau = tau_mean + \
             noise_dir.reshape(1, 2) * noise.reshape(tau_mean.shape[0], 1)
+        
+        if self.cfg.use_DMP:
+            tau = self.dmp.calculate(tau[np.newaxis, ...])[0]
+        else:
+            tau = RBF.calculate(tau, self.cfg.number_of_MP_kernels)
+
+        # generate center points(YCB only)
+        target_x = centers[task_id][0]
+        target_y = centers[task_id][1] - self.cfg.image_y_range[0]
         if self.cfg.img_as_task:
             obj_list = self.objects[list(self.objects.keys())[
                 objects[task_id]]]
@@ -301,9 +323,9 @@ class YCBEnv(Env):
             object_im = cv2.cvtColor(cv2.imread(obj_list[object_id], cv2.IMREAD_UNCHANGED),
                                      cv2.COLOR_BGRA2RGBA).astype(np.float32)
             object_im = self.augmentation_obj(object_im[..., :3])/255.
-            return tau, task_id, object_im, im
+            return tau, task_id, object_im, im, np.array([target_x, target_y])
         else:
-            return tau, task_id, im
+            return tau, task_id, im, np.array([target_x, target_y])
 
 
 if __name__ == '__main__':
