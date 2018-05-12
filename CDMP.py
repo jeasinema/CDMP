@@ -227,14 +227,16 @@ class CMP(object):
             p0 = np.tile(np.asarray((0., self.cfg.image_y_range[0]), dtype=np.float32), (self.cfg.batch_size_test, 1)) 
             w = self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy()
             tauo = tuple(dmp.generate(w, target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
+            tau = tuple(dmp.generate(wgt.cpu().numpy(), target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
         else:
             tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
+                    for wo in self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy())
+            tau = tuple(RBF.calculate(wo, self.cfg.number_of_MP_kernels)
                     for wo in self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy())
         if self.cfg.img_as_task:
             _, cls, _, imo, _ = tuple(zip(*batch))
         else:
             _, cls, imo, _ = tuple(zip(*batch))
-        tau = tuple(dmp.generate(wgt.cpu().numpy(), target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
         env = self.cfg.env(self.cfg)
         img = display(self.cfg, tauo, imo, cls, interactive=True)
         img_gt = display(self.cfg, tau, imo, cls, interactive=True)

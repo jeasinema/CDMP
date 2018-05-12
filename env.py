@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年05月11日 星期五 12时46分07秒
+# Last Modified : 2018年05月12日 星期六 21时30分56秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -179,6 +179,7 @@ class ToyEnv(Env):
             tau, ep = self.dmp.calculate(tau[np.newaxis, ...])
         else:
             tau = RBF.calculate(tau, self.cfg.number_of_MP_kernels)
+            ep = np.array([0, 0])
 
         if self.cfg.img_as_task:
             task_img = np.ones((self.cfg.object_size[0], self.cfg.object_size[1],
@@ -313,6 +314,7 @@ class YCBEnv(Env):
             tau, ep = self.dmp.calculate(tau[np.newaxis, ...])
         else:
             tau = RBF.calculate(tau, self.cfg.number_of_MP_kernels)
+            ep = np.array([0, 0])
 
         # generate center points(YCB only)
         # target_x = centers[task_id][0]

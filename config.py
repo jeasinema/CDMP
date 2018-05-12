@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年05月11日 星期五 14时41分27秒
+# Last Modified : 2018年05月12日 星期六 21时31分57秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -37,7 +37,7 @@ class Config(object):
         self.trajectory_variance = 0.05
         self.totally_random = True         # if True, target can be anywhere
         # DMP 
-        self.use_DMP =True
+        self.use_DMP = False
         self.DMP_wn = 8.
         self.DMP_xi = 1.5                   # Magic!
         # training properties
@@ -54,7 +54,6 @@ class Config(object):
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
         self.experiment_name = "DMP_YCB_Ten_Point_Reacher_512_128_spatialsoftmax_random_aug"
-        # self.experiment_name = "test"
         self.gpu=1
 
 
