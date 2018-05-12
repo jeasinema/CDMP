@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年04月29日 星期日 00时33分36秒
+# Last Modified : 2018年05月12日 星期六 21时58分37秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -301,6 +301,23 @@ class NN_qz_w(torch.nn.Module):
                 mean).detach(), torch.zeros_like(logvar).detach()
 
         return norm_Dkl(mean, logvar, mean_t, logvar_t)
+
+
+class NN_cnn_dmp(torch.nn.Module):
+    def __init__(self, dim_w, n_k):
+        super(NN_cnn_dmp, self).__init__()
+        self.dim_w = dim_w
+        self.n_k = n_k
+
+        # merge
+        self.fc1 = torch.nn.Linear(2 * 64, 64)
+        self.fc2 = torch.nn.Linear(64, 64)
+        self.mp = torch.nn.Linear(64, self.dim_w * self.n_k)
+
+    def forward(self, im_c):
+        x = F.relu(self.fc1(im_c))
+        x = F.relu(self.fc2(x))
+        return self.mp(x).view(-1, self.n_k, self.dim_w)
 
 
 if __name__ == '__main__':

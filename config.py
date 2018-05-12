@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年05月12日 星期六 21时31分57秒
+# Last Modified : 2018年05月12日 星期六 22时04分11秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -53,8 +53,9 @@ class Config(object):
         self.multi_threads = 32
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        self.experiment_name = "DMP_YCB_Ten_Point_Reacher_512_128_spatialsoftmax_random_aug"
-        self.gpu=1
+        # self.experiment_name = "DMP_YCB_Ten_Point_Reacher_512_128_spatialsoftmax_random_aug"
+        self.experiment_name = "CMP_bs512_hid128"
+        self.gpu=3
 
 
 if __name__ == '__main__':
