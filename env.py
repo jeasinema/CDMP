@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年05月10日 星期四 22时50分24秒
+# Last Modified : 2018年05月11日 星期五 12时46分07秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -176,7 +176,7 @@ class ToyEnv(Env):
                 im, str(im_id[i]), pos, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.3, (.6, .6, .6), 1)
 
         if self.cfg.use_DMP:
-            tau = self.dmp.calculate(tau[np.newaxis, ...])[0]
+            tau, ep = self.dmp.calculate(tau[np.newaxis, ...])
         else:
             tau = RBF.calculate(tau, self.cfg.number_of_MP_kernels)
 
@@ -192,9 +192,9 @@ class ToyEnv(Env):
                 tmp, str(task_id), pos, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 1, (.6, .6, .6), 1)
             task_img[border:border+3*(self.cfg.object_size[0]//4),
                      border:border+3*(self.cfg.object_size[1]//4), :] = tmp
-            return tau, task_id, task_img, im
+            return tau, task_id, task_img, im, ep
         else:
-            return tau, task_id, im
+            return tau, task_id, im, ep
 
 
 class YCBEnv(Env):
@@ -297,9 +297,9 @@ class YCBEnv(Env):
             self.__mask_add_image(im, object_im, centers[i])
         im = self.augmentation(im*255.)/255.
 
-        tau_mean = np.vstack([centers[task_id][0] * self.t,
+        tau_mean = np.vstack([centers[task_id][0] * (1. - np.cos(self.t * np.pi)) / 2.,
                               (centers[task_id][1] - self.cfg.image_y_range[0])
-                              * self.t ** .5 + self.cfg.image_y_range[0]]).T
+                              * (1. - np.cos((1. - np.cos(self.t * np.pi)) / 2. * np.pi)) / 2. + self.cfg.image_y_range[0]]).T
         noise = np.random.normal(
             0., self.cfg.trajectory_variance) * np.sin(self.t * np.pi)
         noise_dir = np.asarray(
@@ -309,13 +309,14 @@ class YCBEnv(Env):
             noise_dir.reshape(1, 2) * noise.reshape(tau_mean.shape[0], 1)
         
         if self.cfg.use_DMP:
-            tau = self.dmp.calculate(tau[np.newaxis, ...])[0]
+            # tau = self.dmp.calculate(tau[np.newaxis, ...])[0]
+            tau, ep = self.dmp.calculate(tau[np.newaxis, ...])
         else:
             tau = RBF.calculate(tau, self.cfg.number_of_MP_kernels)
 
         # generate center points(YCB only)
-        target_x = centers[task_id][0]
-        target_y = centers[task_id][1] - self.cfg.image_y_range[0]
+        # target_x = centers[task_id][0]
+        # target_y = centers[task_id][1]#  - self.cfg.image_y_range[0]
         if self.cfg.img_as_task:
             obj_list = self.objects[list(self.objects.keys())[
                 objects[task_id]]]
@@ -323,9 +324,11 @@ class YCBEnv(Env):
             object_im = cv2.cvtColor(cv2.imread(obj_list[object_id], cv2.IMREAD_UNCHANGED),
                                      cv2.COLOR_BGRA2RGBA).astype(np.float32)
             object_im = self.augmentation_obj(object_im[..., :3])/255.
-            return tau, task_id, object_im, im, np.array([target_x, target_y])
+            # return tau, task_id, object_im, im, np.array([target_x, target_y])
+            return tau, task_id, object_im, im, ep
         else:
-            return tau, task_id, im, np.array([target_x, target_y])
+            # return tau, task_id, im, np.array([target_x, target_y])
+            return tau, task_id, im, ep
 
 
 if __name__ == '__main__':

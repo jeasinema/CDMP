@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年05月11日 星期五 00时13分07秒
+# Last Modified : 2018年05月11日 星期五 14时41分27秒
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -41,9 +41,9 @@ class Config(object):
         self.DMP_wn = 8.
         self.DMP_xi = 1.5                   # Magic!
         # training properties
-        self.batch_size_train = 1         # n_batch
+        self.batch_size_train = 512         # n_batch
         self.batch_size_test = 6
-        self.batches_train = 10
+        self.batches_train = 100
         self.epochs = 1500
         self.continue_training = True
         self.save_interval = 10             # -1 for saving best model
@@ -53,9 +53,9 @@ class Config(object):
         self.multi_threads = 32
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
-        # self.experiment_name = "DMP_YCB_Ten_Point_Reacher_512_128_spatialsoftmax_random_aug"
-        self.experiment_name = "test"
-        self.gpu=0
+        self.experiment_name = "DMP_YCB_Ten_Point_Reacher_512_128_spatialsoftmax_random_aug"
+        # self.experiment_name = "test"
+        self.gpu=1
 
 
 if __name__ == '__main__':

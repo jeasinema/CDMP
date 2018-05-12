@@ -184,6 +184,12 @@ class CMP(object):
                                    self.cfg.image_size[0], self.cfg.image_size[1])
             batch_z = torch.normal(torch.zeros(self.cfg.batch_size_test, self.cfg.number_of_hidden),
                                    torch.ones(self.cfg.batch_size_test, self.cfg.number_of_hidden))
+            batch_w = torch.zeros(
+                self.cfg.batch_size_test, self.cfg.number_of_MP_kernels, self.cfg.trajectory_dimension)
+
+            batch_target = torch.zeros(
+                self.cfg.batch_size_test, 2)
+
             if self.cfg.img_as_task:
                 batch_c = torch.zeros(self.cfg.batch_size_test, self.cfg.image_channels,
                                        self.cfg.object_size[0], self.cfg.object_size[1])
@@ -191,6 +197,8 @@ class CMP(object):
                 batch_c = torch.zeros(self.cfg.batch_size_test, self.cfg.number_of_tasks)
 
             for i, b in enumerate(traj_batch):
+                batch_w[i] = torch.from_numpy(b[0])
+                batch_target[i] = torch.from_numpy(b[-1])
                 if self.cfg.img_as_task:
                     batch_c[i] = torch.from_numpy(b[2].transpose(2, 0, 1))
                     batch_im[i] = torch.from_numpy(b[3].transpose(2, 0, 1))
@@ -198,33 +206,35 @@ class CMP(object):
                     batch_c[i,b[1]] = 1.
                     batch_im[i] = torch.from_numpy(b[2].transpose(2, 0, 1))
             
-            batch_target = b[-1]
 
             if self.use_gpu:
                 return torch.autograd.Variable(batch_z.cuda(), volatile=True),\
                     torch.autograd.Variable(batch_c.cuda(), volatile=True),\
                     torch.autograd.Variable(batch_im.cuda(), volatile=True),\
-                    batch_target
+                    batch_target,\
+                    batch_w
             else:
                 return torch.autograd.Variable(batch_z, volatile=True),\
                     torch.autograd.Variable(batch_c, volatile=True),\
                     torch.autograd.Variable(batch_im, volatile=True),\
-                    batch_target
+                    batch_target,\
+                    batch_w
 
         for batch in generator_test:
             break
-        z, c, im, target = batchToVariable(batch)
+        z, c, im, target, wgt = batchToVariable(batch)
         if self.cfg.use_DMP:
             p0 = np.tile(np.asarray((0., self.cfg.image_y_range[0]), dtype=np.float32), (self.cfg.batch_size_test, 1)) 
-            tauo = tuple(dmp.generate(wo, target, self.cfg.number_time_samples, p0=p0, init=True)
-                    for wo in self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy())
+            w = self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy()
+            tauo = tuple(dmp.generate(w, target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
         else:
             tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
                     for wo in self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy())
         if self.cfg.img_as_task:
-            tau, cls, _, imo, _ = tuple(zip(*batch))
+            _, cls, _, imo, _ = tuple(zip(*batch))
         else:
-            tau, cls, imo, _ = tuple(zip(*batch))
+            _, cls, imo, _ = tuple(zip(*batch))
+        tau = tuple(dmp.generate(wgt.cpu().numpy(), target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
         env = self.cfg.env(self.cfg)
         img = display(self.cfg, tauo, imo, cls, interactive=True)
         img_gt = display(self.cfg, tau, imo, cls, interactive=True)
