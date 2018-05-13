@@ -4,13 +4,14 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Fri 20 Apr 2018 07:02:31 PM CST
+# Last Modified : Sun 13 May 2018 08:52:21 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
 import torch.nn as nn
 import torch.nn.init as init
 import torch.utils.data as data
+import pickle
 import numpy as np
 from math import cos, sin, floor, sqrt, pi, ceil
 
@@ -50,6 +51,19 @@ class EnvDataset(data.Dataset):
         return self.cfg.batches_train*self.cfg.batch_size_train if self.train else self.cfg.batch_size_test
 
 
+class LimitedDataset(data.Dataset):
+    def __init__(self, config, path, train=True):
+        self.cfg = config
+        self.train = train
+        self.dataset = pickle.load(open(path, 'rb'))
+
+    def __getitem__(self, index):
+        return self.dataset[index]
+
+    def __len__(self):
+        return len(self.dataset)
+
+
 def collate_fn_env(batch):
     ret = []
     for sample in batch:
@@ -70,6 +84,22 @@ def build_loader(config, train=True):
         ),
         batch_size=config.batch_size_train if train else config.batch_size_test,
         num_workers=config.multi_threads if train else 1,
+        pin_memory=True if train else False,
+        shuffle=True,
+        collate_fn=collate_fn_env,
+        worker_init_fn=worker_init_fn_env
+    )
+
+
+def build_limited_loader(config, path, train=True):
+    return torch.utils.data.DataLoader(
+        LimitedDataset(
+            config=config,
+            train=train,
+            path=path
+        ),
+        batch_size=config.batch_size_train if train else config.batch_size_test,
+        num_workers=4,
         pin_memory=True if train else False,
         shuffle=True,
         collate_fn=collate_fn_env,

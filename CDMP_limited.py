@@ -7,7 +7,7 @@ from datetime import datetime as dt
 import argparse
 
 from config import Config
-from utils import bar, build_loader
+from utils import bar, build_loader, build_limited_loader
 from rbf import RBF
 from dmp import DMP
 from model import *
@@ -16,8 +16,10 @@ from env import display
 from tensorboardX import SummaryWriter
  
 
-parser = argparse.ArgumentParser(description='cnn_dmp')
+parser = argparse.ArgumentParser(description='CDMP')
 parser.add_argument('--model-path', type=str, nargs='?', default='', help='load model')
+parser.add_argument('--train-data-path', type=str, nargs='?', default='', help='load train data')
+parser.add_argument('--test-data-path', type=str, nargs='?', default='', help='load test data')
 args = parser.parse_args()
 
 g_net_param = torch.load(args.model_path) if args.model_path else None
@@ -29,26 +31,41 @@ else:
 logger = SummaryWriter(os.path.join(cfg.log_path, cfg.experiment_name))
 torch.cuda.set_device(cfg.gpu)
 
-#loader
-generator_train = build_loader(cfg, True)  # function pointer
-generator_test = build_loader(cfg, False)    # function pointer
+if cfg.use_DMP:
+    dmp = DMP(cfg)
 
-class CNN_DMP(object):
+#loader
+generator_train = build_limited_loader(cfg, args.train_data_path, True)  # function pointer
+generator_test = build_limited_loader(cfg, args.test_data_path, False)    # function pointer
+
+class CMP(object):
     def __init__(self, config):
         self.cfg = config
         self.condition_net = NN_img_c(sz_image=self.cfg.image_size,
                                       ch_image=self.cfg.image_channels,
                                       tasks=self.cfg.number_of_tasks,
                                       task_img_sz=(self.cfg.object_size[0] if self.cfg.img_as_task else -1))
-        self.cnn_dmp = NN_cnn_dmp(dim_w=self.cfg.trajectory_dimension,
+        self.encoder = NN_qz_w(n_z=self.cfg.number_of_hidden,
+                               ch_image=self.cfg.image_channels,
+                               sz_image=self.cfg.image_size,
+                               tasks=self.cfg.number_of_tasks,
+                               dim_w=self.cfg.trajectory_dimension,
+                               n_k=self.cfg.number_of_MP_kernels)
+        self.decoder = NN_pw_zimc(sz_image=self.cfg.image_size,
+                                  ch_image=self.cfg.image_channels,
+                                  n_z=self.cfg.number_of_hidden,
+                                  tasks=self.cfg.number_of_tasks,
+                                  dim_w=self.cfg.trajectory_dimension,
                                   n_k=self.cfg.number_of_MP_kernels)
         if g_net_param:
-            self.cnn_dmp.load_state_dict(g_net_param['cnn_dmp'])
+            self.encoder.load_state_dict(g_net_param['encoder'])
+            self.decoder.load_state_dict(g_net_param['decoder'])
             self.condition_net.load_state_dict(g_net_param['condition_net'])
         self.use_gpu = (self.cfg.use_gpu and torch.cuda.is_available())
         if self.use_gpu:
             print("Use GPU for training, all parameters will move to GPU {}".format(self.cfg.gpu))
-            self.cnn_dmp.cuda()
+            self.encoder.cuda()
+            self.decoder.cuda()
             self.condition_net.cuda()
 
         # TODO: loading from check points
@@ -84,7 +101,8 @@ class CNN_DMP(object):
                     torch.autograd.Variable(batch_im)
 
         optim = torch.optim.Adam(
-            list(self.cnn_dmp.parameters()) + list(self.condition_net.parameters()))
+            list(self.decoder.parameters()) + list(self.encoder.parameters()) +
+            list(self.condition_net.parameters()))
         loss = []
         if g_net_param:
             base = g_net_param['epoch'] 
@@ -92,25 +110,35 @@ class CNN_DMP(object):
             base = 0
         for epoch in range(base, self.cfg.epochs+base):
             avg_loss = []
+            avg_loss_de = []
+            avg_loss_ee = []
             for i, batch in enumerate(generator_train):
                 w, c, im = batchToVariable(batch)
                 optim.zero_grad()
                 im_c = self.condition_net(im, c)
-                w_pred = self.cnn_dmp(im_c)
-                l = F.mse_loss(w, w_pred).mean()
+                z = self.encoder.sample(
+                    w, im_c, samples=self.cfg.number_of_oversample, reparameterization=True)
+                de = self.decoder.mse_error(w, z, im_c).mean()
+                ee = self.encoder.Dkl(w, im_c).mean()
+                l = de + ee
                 l.backward()
                 optim.step()
 
                 avg_loss.append(l.item())
+                avg_loss_de.append(de.item())
+                avg_loss_ee.append(ee.item())
 
-                bar(i + 1, self.cfg.batches_train, "Epoch %d/%d: " % (epoch + 1, self.cfg.epochs),
-                    " | Err=%f" % (l.item()), end_string='')
+                batches_train = len(generator_train.dataset)//self.cfg.batch_size_train
+                bar(i + 1, batches_train, "Epoch %d/%d: " % (epoch + 1, self.cfg.epochs),
+                    " | D-Err=%f; E-Err=%f" % (de.item(), ee.item()), end_string='')
 
                 # update training counter and make check points
-                if i + 1 >= self.cfg.batches_train:
+                if i + 1 >= batches_train:
                     loss.append(sum(avg_loss) / len(avg_loss))
                     print("Epoch=%d, Average Loss=%f" % (epoch + 1, loss[-1]))
                     logger.add_scalar('loss', sum(avg_loss)/len(avg_loss), epoch)
+                    logger.add_scalar('loss_de', sum(avg_loss_de)/len(avg_loss_de), epoch)
+                    logger.add_scalar('loss_ee', sum(avg_loss_ee)/len(avg_loss_ee), epoch)
                     break
             if (epoch % self.cfg.save_interval == 0 and epoch != 0) or\
                     (self.cfg.save_interval <= 0 and loss[-1] == min(loss)):
@@ -118,7 +146,8 @@ class CNN_DMP(object):
                     "epoch": epoch,
                     "config": self.cfg,
                     "loss": loss,
-                    "cnn_dmp": self.cnn_dmp.state_dict(),
+                    "encoder": self.encoder.state_dict(),
+                    "decoder": self.decoder.state_dict(),
                     "condition_net": self.condition_net.state_dict()
                 }
                 os.makedirs(self.cfg.check_point_path, exist_ok=True)
@@ -196,17 +225,20 @@ class CNN_DMP(object):
 
         for batch in generator_test:
             break
-        z, c, im, target, wgt = batchToVariable(batch)
+        _, c, im, target, wgt = batchToVariable(batch)
+        im_c = self.condition_net(im, c)
+        z = self.encoder.sample(None, im_c, reparameterization=False, prior=True)
         if self.cfg.use_DMP:
             p0 = np.tile(np.asarray((0., self.cfg.image_y_range[0]), dtype=np.float32), (self.cfg.batch_size_test, 1)) 
-            w = self.cnn_dmp(self.condition_net(im, c)).cpu().data.numpy()
+            w = self.decoder.sample(z, im_c).cpu().data.numpy()
             tauo = tuple(dmp.generate(w, target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
             tau = tuple(dmp.generate(wgt.cpu().numpy(), target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
         else:
             tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
-                    for wo in self.cnn_dmp(self.condition_net(im, c)).cpu().data.numpy())
+                    for wo in self.decoder.sample(z, im_c).cpu().data.numpy())
             tau = tuple(RBF.generate(wo, self.cfg.number_of_MP_kernels)
                     for wo in wgt)
+
         if self.cfg.img_as_task:
             _, cls, _, imo, _ = tuple(zip(*batch))
         else:
@@ -222,7 +254,7 @@ class CNN_DMP(object):
 
 
 def main():
-    alg = CNN_DMP(config=cfg)
+    alg = CMP(config=cfg)
     alg.train()
     alg.test()
 

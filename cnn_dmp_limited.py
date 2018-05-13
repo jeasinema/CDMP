@@ -7,7 +7,7 @@ from datetime import datetime as dt
 import argparse
 
 from config import Config
-from utils import bar, build_loader
+from utils import bar, build_loader, build_limited_loader
 from rbf import RBF
 from dmp import DMP
 from model import *
@@ -18,6 +18,9 @@ from tensorboardX import SummaryWriter
 
 parser = argparse.ArgumentParser(description='cnn_dmp')
 parser.add_argument('--model-path', type=str, nargs='?', default='', help='load model')
+parser.add_argument('--train-data-path', type=str, nargs='?', default='', help='load train data')
+parser.add_argument('--test-data-path', type=str, nargs='?', default='', help='load test data')
+
 args = parser.parse_args()
 
 g_net_param = torch.load(args.model_path) if args.model_path else None
@@ -30,8 +33,8 @@ logger = SummaryWriter(os.path.join(cfg.log_path, cfg.experiment_name))
 torch.cuda.set_device(cfg.gpu)
 
 #loader
-generator_train = build_loader(cfg, True)  # function pointer
-generator_test = build_loader(cfg, False)    # function pointer
+generator_train = build_limited_loader(cfg, args.train_data_path, True)  # function pointer
+generator_test = build_limited_loader(cfg, args.test_data_path, False)    # function pointer
 
 class CNN_DMP(object):
     def __init__(self, config):
@@ -103,11 +106,12 @@ class CNN_DMP(object):
 
                 avg_loss.append(l.item())
 
-                bar(i + 1, self.cfg.batches_train, "Epoch %d/%d: " % (epoch + 1, self.cfg.epochs),
+                batches_train = len(generator_train.dataset)//self.cfg.batch_size_train
+                bar(i + 1, batches_train, "Epoch %d/%d: " % (epoch + 1, self.cfg.epochs),
                     " | Err=%f" % (l.item()), end_string='')
 
                 # update training counter and make check points
-                if i + 1 >= self.cfg.batches_train:
+                if i + 1 >= batches_train:
                     loss.append(sum(avg_loss) / len(avg_loss))
                     print("Epoch=%d, Average Loss=%f" % (epoch + 1, loss[-1]))
                     logger.add_scalar('loss', sum(avg_loss)/len(avg_loss), epoch)
