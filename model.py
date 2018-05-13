@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年05月12日 星期六 21时58分37秒
+# Last Modified : Sun 13 May 2018 04:23:01 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -243,29 +243,44 @@ class NN_qz_w(torch.nn.Module):
         self.mean = torch.nn.Linear(64, self.n_z)
         self.logvar = torch.nn.Linear(64, self.n_z)
 
+        # for prior z output
+        self.fc_z1 = torch.nn.Linear(2*64, 64)
+        self.fc_z2 = torch.nn.Linear(64, 64)
+        self.priorz_mean = torch.nn.Linear(64, self.n_z)
+        self.priorz_logvar = torch.nn.Linear(64, self.n_z)
+
         self.relu = torch.nn.ReLU()
         self.sigmoid = torch.nn.Sigmoid()
 
     # input w(n_batch, k_w, dim_w), im_c(n_batch, channel)
     # output mean(n_batch, n_z), logvar(n_batch, n_z)
-    def forward(self, w, im_c):
-        n_batch = w.size(0)
+    def forward(self, w, im_c, prior=False):
+        # prior z
+        if prior:
+            x = self.relu(self.fc_z1(im_c))
+            x = self.relu(self.fc_z2(x))
+            mean_pz = self.priorz_mean(x)
+            logvar_pz = self.priorz_logvar(x)
+            return mean_pz, logvar_pz
+        else:
+            n_batch = w.size(0)
 
-        # w
-        w_x = self.relu(self.fc_w1(w.view(n_batch, -1)))
-        w_x = self.relu(self.fc_w2(w_x))
+            # w
+            w_x = self.relu(self.fc_w1(w.view(n_batch, -1)))
+            w_x = self.relu(self.fc_w2(w_x))
 
-        # merge
-        x = self.relu(self.fc1(torch.cat((im_c, w_x), 1)))
-        x = self.relu(self.fc2(x))
-        mean = self.mean(x)
-        logvar = self.logvar(x)
-        return mean, logvar
+            # merge
+            x = self.relu(self.fc1(torch.cat((im_c, w_x), 1)))
+            x = self.relu(self.fc2(x))
+            mean = self.mean(x)
+            logvar = self.logvar(x)
+
+            return mean, logvar
 
     # if samples is None, then return shape (n_batch, n_z)
     # else return shape (n_samples, n_batch, n_z)
-    def sample(self, w, im_c, samples=None, reparameterization=False):
-        mean, logvar = self.forward(w, im_c)
+    def sample(self, w, im_c, samples=None, reparameterization=False, prior=False):
+        mean, logvar = self.forward(w, im_c, prior=prior)
         if reparameterization:
             dist = torch.distributions.Normal(
                 torch.zeros_like(mean), torch.ones_like(logvar))
@@ -292,15 +307,16 @@ class NN_qz_w(torch.nn.Module):
             # for diagonal v, Dkl(p||q) = 0.5*(sum(log(v2[i])-log(v1[i])+v1[i]/v2[i]+(u1[i]-u2[i])**2/v2[i]-1))
             return (logvar2 - logvar1 + (torch.exp(logvar1)**2 + (mean1 - mean2)**2) / (2 * torch.exp(logvar2)**2) - 1 / 2).sum(-1)
 
-        mean, logvar = self.forward(w, im_c)
-        if next(self.fc1.parameters()).is_cuda:
-            mean_t, logvar_t = torch.zeros_like(mean).cuda(
-            ).detach(), torch.zeros_like(logvar).cuda().detach()
-        else:
-            mean_t, logvar_t = torch.zeros_like(
-                mean).detach(), torch.zeros_like(logvar).detach()
+        mean, logvar = self.forward(w, im_c, False)
+        mean_prior,logvar_prior = self.forward(w, im_c, True)
+        # if next(self.fc1.parameters()).is_cuda:
+        #     mean_t, logvar_t = torch.zeros_like(mean).cuda(
+        #     ).detach(), torch.zeros_like(logvar).cuda().detach()
+        # else:
+        #     mean_t, logvar_t = torch.zeros_like(
+        #         mean).detach(), torch.zeros_like(logvar).detach()
 
-        return norm_Dkl(mean, logvar, mean_t, logvar_t)
+        return norm_Dkl(mean, logvar, mean_prior, logvar_prior)
 
 
 class NN_cnn_dmp(torch.nn.Module):

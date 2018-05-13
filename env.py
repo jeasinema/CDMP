@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : 2018年05月12日 星期六 21时30分56秒
+# Last Modified : Sat 12 May 2018 10:54:12 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -298,9 +298,12 @@ class YCBEnv(Env):
             self.__mask_add_image(im, object_im, centers[i])
         im = self.augmentation(im*255.)/255.
 
-        tau_mean = np.vstack([centers[task_id][0] * (1. - np.cos(self.t * np.pi)) / 2.,
+        # tau_mean = np.vstack([centers[task_id][0] * (1. - np.cos(self.t * np.pi)) / 2.,
+        #                       (centers[task_id][1] - self.cfg.image_y_range[0])
+        #                       * (1. - np.cos((1. - np.cos(self.t * np.pi)) / 2. * np.pi)) / 2. + self.cfg.image_y_range[0]]).T
+        tau_mean = np.vstack([centers[task_id][0] * self.t,
                               (centers[task_id][1] - self.cfg.image_y_range[0])
-                              * (1. - np.cos((1. - np.cos(self.t * np.pi)) / 2. * np.pi)) / 2. + self.cfg.image_y_range[0]]).T
+                              * self.t ** .5 + self.cfg.image_y_range[0]]).T
         noise = np.random.normal(
             0., self.cfg.trajectory_variance) * np.sin(self.t * np.pi)
         noise_dir = np.asarray(

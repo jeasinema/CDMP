@@ -222,16 +222,18 @@ class CMP(object):
 
         for batch in generator_test:
             break
-        z, c, im, target, wgt = batchToVariable(batch)
+        _, c, im, target, wgt = batchToVariable(batch)
+        im_c = self.condition_net(im, c)
+        z = self.encoder.sample(None, im_c, reparameterization=False, prior=True)
         if self.cfg.use_DMP:
             p0 = np.tile(np.asarray((0., self.cfg.image_y_range[0]), dtype=np.float32), (self.cfg.batch_size_test, 1)) 
-            w = self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy()
+            w = self.decoder.sample(z, im_c).cpu().data.numpy()
             tauo = tuple(dmp.generate(w, target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
             tau = tuple(dmp.generate(wgt.cpu().numpy(), target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
         else:
             tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
-                    for wo in self.decoder.sample(z, self.condition_net(im, c)).cpu().data.numpy())
-            tau = tuple(RBF.calculate(wo, self.cfg.number_of_MP_kernels)
+                    for wo in self.decoder.sample(z, im_c).cpu().data.numpy())
+            tau = tuple(RBF.generate(wo, self.cfg.number_of_MP_kernels)
                     for wo in wgt)
 
         if self.cfg.img_as_task:
