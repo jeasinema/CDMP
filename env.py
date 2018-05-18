@@ -4,7 +4,7 @@
 # File Name : env.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Sat 12 May 2018 10:54:12 PM CST
+# Last Modified : Fri 18 May 2018 02:40:51 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import cv2
@@ -56,35 +56,68 @@ def display(cfg, tau, im, c=None, name="", interactive=False):
             fig, axarr = plt.subplots(2, 3, num=name)
         else:
             fig, axarr = plt.subplots(2, 4, num=name)
-        for w, i, t, f in zip(tau, im, c, range(n_batch)):
-            if n_batch <= 3:
-                axarr[f].imshow(i)
-                axarr[f].plot(*remap_data_to_image(cfg,
-                                                     w[:, 0], w[:, 1]), "#00FF00")
-                if t is not None:
-                    axarr[f].set_title("Task_%d" % t)
-            elif n_batch == 4:
-                axarr[f // 2, f % 2].imshow(i)
-                axarr[f // 2, f %
-                      2].plot(*remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
-                if t is not None:
-                    axarr[f // 2, f % 2].set_title("Task_%d" % t)
-            elif n_batch <= 6:
-                axarr[f // 3, f % 3].set_yticklabels([])
-                axarr[f // 3, f % 3].set_xticklabels([])
-                axarr[f // 3, f % 3].imshow(i)
-                axarr[f // 3, f %
-                      3].plot(*remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
-                if t is not None:
-                    axarr[f // 3, f % 3].set_title("Task_%d" % t)
-            else:
-                axarr[f // 4, f % 4].set_yticklabels([])
-                axarr[f // 4, f % 4].set_xticklabels([])
-                axarr[f // 4, f % 4].imshow(i)
-                axarr[f // 4, f %
-                      4].plot(*remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
-                if t is not None:
-                    axarr[f // 4, f % 4].set_title("Task_%d" % t)
+        if len(np.array(tau).shape) == 4:
+            for mul_w, i, t, f in zip(tau, im, c, range(n_batch)):
+                for w in mul_w:
+                    if n_batch <= 3:
+                        axarr[f].imshow(i)
+                        axarr[f].plot(*remap_data_to_image(cfg,
+                                                             w[:, 0], w[:, 1]), "#00FF00")
+                        if t is not None:
+                            axarr[f].set_title("Task_%d" % t)
+                    elif n_batch == 4:
+                        axarr[f // 2, f % 2].imshow(i)
+                        axarr[f // 2, f %
+                              2].plot(*remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
+                        if t is not None:
+                            axarr[f // 2, f % 2].set_title("Task_%d" % t)
+                    elif n_batch <= 6:
+                        axarr[f // 3, f % 3].set_yticklabels([])
+                        axarr[f // 3, f % 3].set_xticklabels([])
+                        axarr[f // 3, f % 3].imshow(i)
+                        axarr[f // 3, f %
+                              3].plot(*remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
+                        if t is not None:
+                            axarr[f // 3, f % 3].set_title("Task_%d" % t)
+                    else:
+                        axarr[f // 4, f % 4].set_yticklabels([])
+                        axarr[f // 4, f % 4].set_xticklabels([])
+                        axarr[f // 4, f % 4].imshow(i)
+                        axarr[f // 4, f %
+                              4].plot(*remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
+                        if t is not None:
+                            axarr[f // 4, f % 4].set_title("Task_%d" % t)
+        else:
+            for w, i, t, f in zip(tau, im, c, range(n_batch)):
+                if n_batch <= 3:
+                    axarr[f].imshow(i)
+                    axarr[f].plot(*remap_data_to_image(cfg,
+                                                         w[:, 0], w[:, 1]), "#00FF00")
+                    if t is not None:
+                        axarr[f].set_title("Task_%d" % t)
+                elif n_batch == 4:
+                    axarr[f // 2, f % 2].imshow(i)
+                    axarr[f // 2, f %
+                          2].plot(*remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
+                    if t is not None:
+                        axarr[f // 2, f % 2].set_title("Task_%d" % t)
+                elif n_batch <= 6:
+                    axarr[f // 3, f % 3].set_yticklabels([])
+                    axarr[f // 3, f % 3].set_xticklabels([])
+                    axarr[f // 3, f % 3].imshow(i)
+                    axarr[f // 3, f %
+                          3].plot(*remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
+                    if t is not None:
+                        axarr[f // 3, f % 3].set_title("Task_%d" % t)
+                else:
+                    axarr[f // 4, f % 4].set_yticklabels([])
+                    axarr[f // 4, f % 4].set_xticklabels([])
+                    axarr[f // 4, f % 4].imshow(i)
+                    axarr[f // 4, f %
+                          4].plot(*remap_data_to_image(cfg, w[:, 0], w[:, 1]), "#00FF00")
+                    if t is not None:
+                        axarr[f // 4, f % 4].set_title("Task_%d" % t)
+
     if interactive:
         plt.pause(0.01)
     else:

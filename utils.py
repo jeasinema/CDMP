@@ -4,7 +4,7 @@
 # File Name : utils.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Sun 13 May 2018 08:52:21 PM CST
+# Last Modified : Thu 17 May 2018 12:23:18 PM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -99,7 +99,7 @@ def build_limited_loader(config, path, train=True):
             path=path
         ),
         batch_size=config.batch_size_train if train else config.batch_size_test,
-        num_workers=4,
+        num_workers=0,
         pin_memory=True if train else False,
         shuffle=True,
         collate_fn=collate_fn_env,

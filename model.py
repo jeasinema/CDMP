@@ -4,7 +4,7 @@
 # File Name : model.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Sun 13 May 2018 04:23:01 PM CST
+# Last Modified : Fri 18 May 2018 02:18:55 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 import torch
@@ -214,9 +214,9 @@ class NN_pw_zimc(torch.nn.Module):
     def mse_error(self, w, z, im_c):
         if len(z.size()) == len(im_c.size()) + 1:
             m = z.size(0)
-            mean, _ = self.forward(
+            mean, logvar = self.forward(
                 z.view(-1, z.size(-1)), im_c.repeat(m, 1))
-            return ((w.repeat(m, 1, 1) - mean)**2).view(m, *w.size()).sum(-1).sum(-1).mean()
+            return (((w.repeat(m, 1, 1) - mean)**2)).view(m, *w.size()).sum(-1).sum(-1).mean()
         else:
             mean, logvar = self.forward(z, im_c)
             dist = torch.distributions.Normal(mean, torch.exp(logvar))

@@ -4,7 +4,7 @@
 # File Name : config.py
 # Purpose :
 # Creation Date : 09-04-2018
-# Last Modified : Sun 13 May 2018 09:31:29 PM CST
+# Last Modified : Fri 18 May 2018 02:18:45 AM CST
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
 from env import *
@@ -16,15 +16,16 @@ class Config(object):
         # task properties
         self.number_of_tasks = 10          # n_c
         self.trajectory_dimension = 2       # n_dim
-        self.image_size = (224, 224)        # sz_im
         self.img_as_task = False
         self.object_size = (32, 32)
         # Toy
-        # self.image_x_range = (-1., 1.)
-        # self.image_y_range = (-1., 1.)
+        self.image_x_range = (-1., 1.)
+        self.image_y_range = (-1., 1.)
+        self.image_size = (100, 100)        # sz_im
         # YCB
-        self.image_x_range = (-.45, .45)
-        self.image_y_range = (-.4, .4)
+        # self.image_x_range = (-.45, .45)
+        # self.image_y_range = (-.4, .4)
+        # self.image_size = (224, 224)        # sz_im
         self.image_channels = 3             # ch_im
         self.number_of_hidden = 128          # n_z
         self.number_of_MP_kernels = 10      # n_k
@@ -54,9 +55,10 @@ class Config(object):
         self.log_path = "./assets/log"
         self.check_point_path = "./assets/learned_model"
         # self.experiment_name = "DMP_YCB_Ten_Point_Reacher_512_128_spatialsoftmax_random_aug"
-        # self.experiment_name = "CMPL5000_bs200_hid128_fixtraj"
-        self.experiment_name = "CNN_DMPL5000_bs200_fixtraj"
-        self.gpu=2
+        self.experiment_name = "CMP_Toy_nofixmse"
+        # self.experiment_name = "EXP_CNN_DMP_YCB_100_new"
+        # self.experiment_name = "test"
+        self.gpu=1
 
 
 if __name__ == '__main__':

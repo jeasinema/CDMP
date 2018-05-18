@@ -20,6 +20,7 @@ parser = argparse.ArgumentParser(description='cnn_dmp')
 parser.add_argument('--model-path', type=str, nargs='?', default='', help='load model')
 parser.add_argument('--train-data-path', type=str, nargs='?', default='', help='load train data')
 parser.add_argument('--test-data-path', type=str, nargs='?', default='', help='load test data')
+parser.add_argument('--test', action='store_true')
 
 args = parser.parse_args()
 
@@ -33,7 +34,8 @@ logger = SummaryWriter(os.path.join(cfg.log_path, cfg.experiment_name))
 torch.cuda.set_device(cfg.gpu)
 
 #loader
-generator_train = build_limited_loader(cfg, args.train_data_path, True)  # function pointer
+# generator_train = build_limited_loader(cfg, args.train_data_path, True)  # function pointer
+generator_train = build_loader(cfg, True)  # function pointer
 generator_test = build_limited_loader(cfg, args.test_data_path, False)    # function pointer
 
 class CNN_DMP(object):
@@ -132,9 +134,9 @@ class CNN_DMP(object):
                 print("Check point saved @ %s" % check_point_file)
             if epoch != 0 and epoch % self.cfg.display_interval == 0:
                 if self.cfg.img_as_task:
-                    img, img_gt, feature, c = self.test()
+                    img, img_gt, feature, c = self.test(epoch)
                 else:
-                    img, img_gt, feature = self.test()
+                    img, img_gt, feature = self.test(epoch)
                 feature = feature.transpose([0,2,3,1]).sum(axis=-1, keepdims=True)
                 h = feature.shape[1]*4 # CNN factor
                 heatmap = np.zeros((h*2 + 20*3, h*3 + 20*4, 3),  # output 2*3
@@ -156,7 +158,7 @@ class CNN_DMP(object):
                 logger.add_image('test_img_gt', img_gt, epoch)
 
     # generator: (task_id, img) x n_batch
-    def test(self):
+    def test(self, epoch):
         def batchToVariable(traj_batch):
             batch_im = torch.zeros(self.cfg.batch_size_test, self.cfg.image_channels,
                                    self.cfg.image_size[0], self.cfg.image_size[1])
@@ -189,28 +191,39 @@ class CNN_DMP(object):
                 return torch.autograd.Variable(batch_z.cuda(), volatile=True),\
                     torch.autograd.Variable(batch_c.cuda(), volatile=True),\
                     torch.autograd.Variable(batch_im.cuda(), volatile=True),\
-                    batch_target,\
-                    batch_w
+                    torch.autograd.Variable(batch_target.cuda(), volatile=True),\
+                    torch.autograd.Variable(batch_w.cuda(), volatile=True)
             else:
                 return torch.autograd.Variable(batch_z, volatile=True),\
                     torch.autograd.Variable(batch_c, volatile=True),\
                     torch.autograd.Variable(batch_im, volatile=True),\
-                    batch_target,\
-                    batch_w
+                    torch.autograd.Variable(batch_target, volatile=True),\
+                    torch.autograd.Variable(batch_w, volatile=True)
 
-        for batch in generator_test:
-            break
-        z, c, im, target, wgt = batchToVariable(batch)
+        avg_loss = []
+        for i, batch in enumerate(generator_test):
+            z, c, im, target, wgt = batchToVariable(batch)
+            w = self.cnn_dmp(self.condition_net(im, c))
+            l = F.mse_loss(w, wgt)
+            avg_loss.append(-np.log(l.item()))
+
+            batches_test = len(generator_test.dataset)//self.cfg.batch_size_test
+            bar(i + 1, batches_test, "Epoch/Test %d/%d: " % (0, 0),
+                " | CNLL=%f" % (l.item()), end_string='')
+        cnll = float(sum(avg_loss))/float(len(avg_loss))
+        print('\nTest done, CNLL=%f' % cnll)
+        logger.add_scalar('test_cnll', cnll, epoch)
+
         if self.cfg.use_DMP:
             p0 = np.tile(np.asarray((0., self.cfg.image_y_range[0]), dtype=np.float32), (self.cfg.batch_size_test, 1)) 
             w = self.cnn_dmp(self.condition_net(im, c)).cpu().data.numpy()
-            tauo = tuple(dmp.generate(w, target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
+            tauo = tuple(dmp.generate(w, target.cpu().data.numpy(), self.cfg.number_time_samples, p0=p0, init=True))
             tau = tuple(dmp.generate(wgt.cpu().numpy(), target.cpu().numpy(), self.cfg.number_time_samples, p0=p0, init=True))
         else:
             tauo = tuple(RBF.generate(wo, self.cfg.number_time_samples)
                     for wo in self.cnn_dmp(self.condition_net(im, c)).cpu().data.numpy())
             tau = tuple(RBF.generate(wo, self.cfg.number_of_MP_kernels)
-                    for wo in wgt)
+                    for wo in wgt.cpu().data.numpy())
         if self.cfg.img_as_task:
             _, cls, _, imo, _ = tuple(zip(*batch))
         else:
@@ -227,8 +240,11 @@ class CNN_DMP(object):
 
 def main():
     alg = CNN_DMP(config=cfg)
-    alg.train()
-    alg.test()
+    if args.test:
+        alg.test()
+    else:
+        alg.train()
+
 
 
 if __name__ == "__main__":
