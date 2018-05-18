@@ -20,6 +20,11 @@ from tensorboardX import SummaryWriter
 from robot import *
 from utils import *
 from config import Config
+from model import *
+from rbf import RBF
+from dmp import DMP
+from colorize import *
+
 from env import display
 
 parser = argparse.ArgumentParser(description='CDMP_run')
@@ -31,7 +36,7 @@ parser.add_argument('--robot', action='store_true')
 args = parser.parse_args()
 
 
-g_net_param = torch.load(args.model_path) if args.model_path else None
+g_net_param = torch.load(args.model_path, map_location='cpu') if args.model_path else None
 
 if g_net_param:
     cfg = g_net_param['config']
@@ -322,6 +327,7 @@ def main():
                 break
             elif 0 <= cmd < cfg.number_of_tasks:
                 print('Start to compute traj for task [{}:{}]'.format(cmd, tasks[cmd]))
+                from ipdb import set_trace; set_trace()
                 cam_retrieve.value = 1
                 img = cam_queue.get()
                 if img is False:
