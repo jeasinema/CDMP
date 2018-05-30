@@ -72,9 +72,9 @@ class CMP(object):
                                   dim_w=self.cfg.trajectory_dimension,
                                   n_k=self.cfg.number_of_MP_kernels)
         if g_net_param:
-            self.encoder.load_state_dict(g_net_param['encoder'])
-            self.decoder.load_state_dict(g_net_param['decoder'])
-            self.condition_net.load_state_dict(g_net_param['condition_net'])
+            self.encoder.load_state_dict(g_net_param['encoder'], strict=False)
+            self.decoder.load_state_dict(g_net_param['decoder'], strict=False)
+            self.condition_net.load_state_dict(g_net_param['condition_net'], strict=False)
         self.use_gpu = (self.cfg.use_gpu and torch.cuda.is_available())
         if self.use_gpu:
             print("Use GPU for training, all parameters will move to GPU {}".format(self.cfg.gpu))
@@ -278,7 +278,7 @@ class CMP(object):
             tmp = tmp.cuda()
             z = z.cuda()
         im_c = self.condition_net(im, tmp)
-        z = self.encoder.sample(None, im_c, reparameterization=False, prior=True)
+        # z = self.encoder.sample(None, im_c, reparameterization=False, prior=True)
         return self.decoder.sample(z, im_c).cpu().data.numpy()
 
 
