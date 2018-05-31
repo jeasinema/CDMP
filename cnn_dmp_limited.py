@@ -5,15 +5,11 @@ import cv2
 import os
 from datetime import datetime as dt
 import argparse
+from tensorboardX import SummaryWriter
 
 from config import Config
-from utils import bar, build_loader, build_limited_loader
-from rbf import RBF
-from dmp import DMP
+from utils import * 
 from model import *
-from colorize import *
-from env import display
-from tensorboardX import SummaryWriter
  
 
 parser = argparse.ArgumentParser(description='cnn_dmp')

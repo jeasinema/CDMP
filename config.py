@@ -58,7 +58,7 @@ class Config(object):
         self.experiment_name = "CMP_Toy_nofixmse"
         # self.experiment_name = "EXP_CNN_DMP_YCB_100_new"
         # self.experiment_name = "test"
-        self.gpu=1
+        self.gpu=0
 
 
 if __name__ == '__main__':

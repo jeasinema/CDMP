@@ -11,11 +11,9 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from glob import glob
-from rbf import RBF
-from dmp import DMP
 
 from utils import *
-from augmentations import CDMPAugmentation
+from model import RBF, DMP
 
 
 def display(cfg, tau, im, c=None, name="", interactive=False):

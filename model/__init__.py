@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding:UTF-8 -*-
-
 # File Name : __init__.py
-# Purpose :
-# Creation Date : 26-04-2018
+# Creation Date : 31-05-2018
 # Created By : Jeasine Ma [jeasinema[at]gmail[dot]com]
 
-
-from .robot import *
+from .dmp import *
+from .rbf import *
+from .model import *
